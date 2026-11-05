@@ -3,7 +3,7 @@
 # 사용법:
 #   scripts/deploy-ec2.sh ubuntu@<EC2 공인 IP> [-i ~/.ssh/키.pem]
 #   LLM_MOCK=true scripts/deploy-ec2.sh ubuntu@<IP> -i ~/.ssh/키.pem   # 목 모드로 띄우기
-# 전제: 인스턴스가 scripts/ec2-user-data.sh로 준비됐고(Docker·rsync), 보안 그룹에 22·8080이 열려 있다. 자세한 건 docs/deploy.md
+# 전제: 인스턴스가 scripts/ec2-user-data.sh로 준비됐고(Docker·rsync), 보안 그룹에 22·80·443이 열려 있다. 자세한 건 docs/deploy.md
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -35,14 +35,20 @@ fi
 # 없으면 서버가 켜질 때마다 임시 키를 만들어 재배포·재시작 때마다 모두 로그아웃된다
 ssh "${SSH_OPTS[@]}" "$TARGET" "cd $REMOTE_DIR && touch .env && chmod 600 .env && (grep -q '^APP_AUTH_JWT_SECRET=' .env || echo \"APP_AUTH_JWT_SECRET=\$(openssl rand -base64 48 | tr -d '\\n')\" >> .env)"
 
+# HTTPS: compose.prod.yml(Caddy)을 얹고, 도메인은 IP로 만든 sslip.io 주소를 쓴다 (도메인 구입 없이 Let's Encrypt 인증서)
+# 이미 있으면 그대로 둔다 — 도메인을 사면 서버 .env의 DOMAIN만 바꾼다
+DOMAIN_DEFAULT="$(echo "$HOST" | tr . -).sslip.io"
+ssh "${SSH_OPTS[@]}" "$TARGET" "cd $REMOTE_DIR && (grep -q '^COMPOSE_FILE=' .env || echo 'COMPOSE_FILE=compose.yml:compose.prod.yml' >> .env) && (grep -q '^DOMAIN=' .env || echo 'DOMAIN=$DOMAIN_DEFAULT' >> .env)"
+DOMAIN="$(ssh "${SSH_OPTS[@]}" "$TARGET" "grep '^DOMAIN=' $REMOTE_DIR/.env | cut -d= -f2")"
+
 echo "==> 빌드·실행 (첫 빌드는 5분 정도 걸린다)"
 ssh "${SSH_OPTS[@]}" "$TARGET" "cd $REMOTE_DIR && ${REMOTE_ENV}docker compose up -d --build --remove-orphans"
 
-echo "==> 헬스체크: http://$HOST:8080/api/health"
+echo "==> 헬스체크: https://$DOMAIN/api/health (첫 배포는 인증서 발급에 몇십 초 더 걸린다)"
 for _ in $(seq 1 36); do
-  if curl -fsS --max-time 5 "http://$HOST:8080/api/health"; then
+  if curl -fsS --max-time 5 "https://$DOMAIN/api/health"; then
     echo
-    echo "완료. Swagger: http://$HOST:8080/swagger-ui.html"
+    echo "완료. API: https://$DOMAIN  ·  Swagger: https://$DOMAIN/swagger-ui.html"
     exit 0
   fi
   sleep 5

@@ -1,0 +1,6 @@
+# EC2 배포용 HTTPS 앞단 (compose.prod.yml의 caddy). 인증서는 Let's Encrypt에서 자동으로 받고 갱신한다.
+# DOMAIN은 서버 ~/app/.env에 있다 (scripts/deploy-ec2.sh가 IP로 <a-b-c-d>.sslip.io를 만든다)
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy api:8080
+}

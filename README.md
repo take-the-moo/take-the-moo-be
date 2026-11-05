@@ -33,7 +33,7 @@ docker compose down
 
 ### AWS 배포
 
-EC2 한 대에서 `compose.yml`을 그대로 띄운다. 지금 서버는 `http://3.36.178.51:8080`. 자세한 건 [docs/deploy.md](docs/deploy.md).
+EC2 한 대에서 `compose.yml`에 Caddy(HTTPS, `compose.prod.yml`)를 얹어 띄운다. 지금 서버는 **`https://3-36-178-51.sslip.io`**. 자세한 건 [docs/deploy.md](docs/deploy.md).
 
 ```bash
 scripts/deploy-ec2.sh ubuntu@3.36.178.51 -i ~/.ssh/take-the-moo-key.pem   # 배포·재배포
