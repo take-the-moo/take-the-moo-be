@@ -1,0 +1,15 @@
+{
+  "_comment": "엽서 템플릿 배치. 키는 PostcardTemplate 상수 이름. 좌표는 px(왼쪽 위 0,0). backgroundImage·fontFile은 classpath 경로(예: postcard/basic.png, postcard/fonts/xxx.ttf)이고 없으면 null. 팀 템플릿이 나오면 이 값만 바꾼다",
+  "templates": {
+    "BASIC": {
+      "width": 1200,
+      "height": 1800,
+      "backgroundColor": "#F4EBDD",
+      "backgroundImage": null,
+      "fontFile": null,
+      "art": { "x": 80, "y": 80, "width": 1040, "height": 1180 },
+      "title": { "x": 80, "y": 1300, "width": 1040, "height": 110, "fontSize": 52, "color": "#3B2A1A" },
+      "comment": { "x": 120, "y": 1440, "width": 960, "height": 280, "fontSize": 46, "color": "#3B2A1A" }
+    }
+  }
+}
