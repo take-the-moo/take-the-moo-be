@@ -17,6 +17,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     /** 최신순 (인덱스 place_id, created_at). 같은 시각이면 id가 큰 것이 먼저 */
     List<Review> findByPlaceIdOrderByCreatedAtDescIdDesc(Long placeId, Pageable pageable);
 
+    /** 한 사용자의 한걸음. 오래된 순 (F8 나의 발자취) */
+    List<Review> findAllByUserIdOrderByCreatedAtAscIdAsc(String userId);
+
     /** 장소별 한걸음 수 (F6 흔적 지도). 한걸음이 없는 장소는 빠진다 */
     @Query("select new com.hackathon.domain.review.dto.response.PlaceReviewCount(r.placeId, count(r)) from Review r group by r.placeId")
     List<PlaceReviewCount> countByPlace();

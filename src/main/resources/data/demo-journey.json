@@ -1,0 +1,37 @@
+{
+  "_guide": "시연 계정(DemoJourneySeeder)의 기록이다. daysAgo는 오늘 기준 며칠 전이고 지난주 인기에 섞이지 않게 15 이상으로 쓴다. 완주 코스가 3개가 되도록 장소를 골랐다. 베트남어는 초안이라 발표 전에 사람이 읽어 본다.",
+  "visits": [
+    { "contentId": "130152", "name": "서대문형무소역사관", "daysAgo": 116 },
+    { "contentId": "127425", "name": "독립문", "daysAgo": 116 },
+    { "contentId": "1828571", "name": "독립관", "daysAgo": 109 },
+    { "contentId": "2789102", "name": "독립문영천시장", "daysAgo": 100 },
+    { "contentId": "128622", "name": "서대문독립공원", "daysAgo": 93 },
+    { "contentId": "2813170", "name": "국립대한민국임시정부기념관", "daysAgo": 86 },
+    { "contentId": "264375", "name": "연세로", "daysAgo": 79 },
+    { "contentId": "252533", "name": "서울 연세대학교 언더우드관", "daysAgo": 72 },
+    { "contentId": "252532", "name": "서울 연세대학교 스팀슨관", "daysAgo": 72 },
+    { "contentId": "3456475", "name": "창천근린공원", "daysAgo": 65 },
+    { "contentId": "2667611", "name": "이대거리", "daysAgo": 58 },
+    { "contentId": "3456362", "name": "대현문화공원", "daysAgo": 58 },
+    { "contentId": "126503", "name": "봉원사(서울)", "daysAgo": 51 },
+    { "contentId": "126531", "name": "무악산 동봉수대 터", "daysAgo": 44 },
+    { "contentId": "130448", "name": "서대문자연사박물관", "daysAgo": 37 },
+    { "contentId": "3544787", "name": "연희숲속쉼터", "daysAgo": 30 },
+    { "contentId": "3452874", "name": "폭포책방 아름인도서관", "daysAgo": 23 },
+    { "contentId": "2553390", "name": "우석뮤지엄", "daysAgo": 15 }
+  ],
+  "reviews": [
+    { "contentId": "130152", "daysAgo": 116, "content": "Lần đầu đến đây, tôi đi chậm và đọc từng dòng giải thích." },
+    { "contentId": "2789102", "daysAgo": 100, "content": "Các cô ở chợ rất thân thiện, tôi đã mua bánh tteok lần đầu tiên." },
+    { "contentId": "128622", "daysAgo": 93, "content": "Buổi chiều đi dạo ở công viên rất dễ chịu, tôi thấy nhẹ lòng hơn." },
+    { "contentId": "2813170", "daysAgo": 86, "content": "Hôm nay tôi đọc được nhiều câu chuyện mà trước đây chưa từng biết." },
+    { "contentId": "264375", "daysAgo": 79, "content": "Con phố này luôn đông vui, cuối tuần tôi thường đến đây cùng bạn." },
+    { "contentId": "252533", "daysAgo": 72, "content": "Tòa nhà rất đẹp, tôi đã chụp nhiều ảnh để gửi về cho gia đình." },
+    { "contentId": "3456475", "daysAgo": 65, "content": "Một công viên nhỏ yên tĩnh, rất hợp để ngồi nghỉ sau giờ học." },
+    { "contentId": "2667611", "daysAgo": 58, "content": "Tôi đã tự gọi món bằng tiếng Hàn và người bán hiểu được!" },
+    { "contentId": "126503", "daysAgo": 51, "content": "Ngôi chùa yên tĩnh làm tôi nhớ đến quê nhà." },
+    { "contentId": "130448", "daysAgo": 37, "content": "Tôi đi cùng bạn người Hàn và chúng tôi đã xem rất lâu." },
+    { "contentId": "3452874", "daysAgo": 23, "content": "Tôi đọc được một cuốn sách tiếng Hàn dễ ở đây, thấy rất vui." },
+    { "contentId": "2553390", "daysAgo": 15, "content": "Sắp phải về nước rồi, tôi muốn nhớ mãi những buổi đi dạo ở Seodaemun." }
+  ]
+}

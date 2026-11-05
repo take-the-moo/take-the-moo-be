@@ -75,7 +75,7 @@ src/main/java/com/hackathon
 ├── global/{config, common, entity, util, response, exception}   설정·공통 코드값·BaseTimeEntity·ApiResult·예외 처리
 └── domain/
     ├── llm/{controller, service, dto, prompt, exception}       LlmClient·PromptRegistry·범용 샘플 API
-    └── {user, recommend, scene, place, photo, visit, review, postcard}/   기능별 도메인 (AGENTS.md 참고)
+    └── {user, recommend, scene, place, photo, visit, review, postcard, journey}/   기능별 도메인 (AGENTS.md 참고)
 src/main/resources/{application.yml, prompts.yml}
 ```
 
@@ -101,4 +101,5 @@ src/main/resources/{application.yml, prompts.yml}
 | `app.tour.sync-enabled` | `true` | 장소 동기화 켜기. 발표 전에는 `false` |
 | `app.station.api-key` / `APP_STATION_API_KEY` | (없음) | T Data 지하철역 좌표정보 인증키. 서버 시작 시(비어 있으면)와 장소 동기화 때 역을 DB로 동기화 |
 | `app.demo.default-station` | `독립문` | 위치·역을 못 받았을 때 기준 역 |
+| `app.demo.password` / `APP_DEMO_PASSWORD` | (없음) | 시연 계정 `demo_linh`의 비밀번호. 없으면 시연 계정을 만들지 않는다 |
 | `app.visit.stamp-radius-meters` | `200` | 방문 도장을 줄 장소 반경(미터) |
