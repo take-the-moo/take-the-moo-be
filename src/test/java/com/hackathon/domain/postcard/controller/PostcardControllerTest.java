@@ -15,7 +15,7 @@ import com.hackathon.domain.postcard.entity.PostcardStatus;
 import com.hackathon.domain.postcard.entity.PostcardTemplate;
 import com.hackathon.domain.postcard.repository.PostcardRepository;
 import com.hackathon.domain.postcard.service.PostcardService;
-import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
+import com.hackathon.support.TestUsers;
 import com.hackathon.domain.user.service.UserService;
 import com.hackathon.global.common.Language;
 import com.hackathon.global.common.Nationality;
@@ -67,7 +67,7 @@ class PostcardControllerTest {
     }
 
     private String createUser() {
-        return userService.create(new UserCreateRequestDto(Nationality.VN, Language.VI)).userId();
+        return TestUsers.create(userService, Nationality.VN, Language.VI);
     }
 
     private String uploadPhoto(String owner, String contentType, byte[] bytes) {

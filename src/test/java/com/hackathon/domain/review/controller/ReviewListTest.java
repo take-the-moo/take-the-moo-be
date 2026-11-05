@@ -12,7 +12,7 @@ import com.hackathon.domain.place.repository.PlaceRepository;
 import com.hackathon.domain.review.entity.Review;
 import com.hackathon.domain.review.repository.ReviewRepository;
 import com.hackathon.domain.review.repository.ReviewTranslationRepository;
-import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
+import com.hackathon.support.TestUsers;
 import com.hackathon.domain.user.service.UserService;
 import com.hackathon.global.common.Language;
 import com.hackathon.global.common.Nationality;
@@ -57,8 +57,8 @@ class ReviewListTest {
         place.updateTourInfo("12", "독립문", "서울 서대문구", 37.57, 126.96, null, "20261101000000");
         place.applyRules(null, true, false);
         placeId = placeRepository.save(place).getId();
-        vietnamese = userService.create(new UserCreateRequestDto(Nationality.VN, Language.VI)).userId();
-        japanese = userService.create(new UserCreateRequestDto(Nationality.JP, Language.JA)).userId();
+        vietnamese = TestUsers.create(userService, Nationality.VN, Language.VI);
+        japanese = TestUsers.create(userService, Nationality.JP, Language.JA);
 
         reviewRepository.save(Review.create(placeId, japanese, "門が思ったより小さかった", Language.JA));
         reviewRepository.save(Review.create(placeId, vietnamese, "Đẹp lắm", Language.VI));

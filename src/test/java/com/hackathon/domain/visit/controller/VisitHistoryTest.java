@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.hackathon.domain.place.curation.PlaceCuration;
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.repository.PlaceRepository;
-import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
+import com.hackathon.support.TestUsers;
 import com.hackathon.domain.user.service.UserService;
 import com.hackathon.domain.visit.entity.Visit;
 import com.hackathon.domain.visit.repository.VisitRepository;
@@ -89,7 +89,7 @@ class VisitHistoryTest {
     }
 
     private String newUser(Language language) {
-        return userService.create(new UserCreateRequestDto(Nationality.VN, language)).userId();
+        return TestUsers.create(userService, Nationality.VN, language);
     }
 
     private void visit(Place place, LocalDate date) {

@@ -13,7 +13,7 @@ import java.time.LocalTime;
 /** 좌표는 거리 계산에만 쓰고 저장·로그하지 않는다. URL에 남지 않도록 본문으로 받는다 */
 @Schema(description = "방문 도장 요청")
 public record VisitRequestDto(
-        @Schema(description = "POST /api/users가 돌려준 userId", example = "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c",
+        @Schema(description = "로그인한 사용자의 userId (토큰의 사용자와 같아야 한다)", example = "linh_2026",
                 requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank(message = "사용자 ID가 없습니다. 처음 설정을 다시 해 주세요.")
         @Size(max = 36, message = "올바른 사용자 ID가 아닙니다.")

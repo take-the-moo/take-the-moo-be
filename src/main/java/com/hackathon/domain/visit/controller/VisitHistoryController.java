@@ -27,7 +27,7 @@ public class VisitHistoryController {
             """)
     @GetMapping("/api/users/{userId}/visits")
     public ResponseEntity<ApiResult<VisitHistoryResponseDto>> history(
-            @Parameter(description = "POST /api/users가 돌려준 userId") @PathVariable String userId
+            @Parameter(description = "로그인한 사용자의 userId (토큰의 사용자와 같아야 한다)") @PathVariable String userId
     ) {
         return ApiResponse.of(SuccessType.SUCCESS, visitHistoryService.getHistory(userId));
     }

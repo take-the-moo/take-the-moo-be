@@ -1,42 +1,118 @@
 package com.hackathon.domain.user.service;
 
-import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
 import com.hackathon.domain.user.dto.response.UserResponseDto;
 import com.hackathon.domain.user.entity.AppUser;
 import com.hackathon.domain.user.exception.UserErrorType;
 import com.hackathon.domain.user.exception.UserException;
 import com.hackathon.domain.user.repository.AppUserRepository;
+import com.hackathon.global.auth.AuthContext;
+import com.hackathon.global.common.Language;
 import com.hackathon.global.common.Nationality;
+import com.hackathon.global.config.AppProperties;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 익명 사용자 생성·조회. 다른 도메인은 이 서비스로 국적·언어를 얻는다 (repository를 직접 쓰지 않는다).
+ * 사용자 가입·로그인 확인·조회·수정. 다른 도메인은 이 서비스로 국적·언어를 얻는다 (repository를 직접 쓰지 않는다).
+ * 토큰 발급은 AuthService가 한다. 비밀번호 원문은 저장·로그하지 않는다.
  */
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserService {
 
     private final AppUserRepository appUserRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final boolean enforceToken;
 
+    public UserService(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder,
+                       AppProperties properties) {
+        this.appUserRepository = appUserRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.enforceToken = properties.auth().enforceToken();
+    }
+
+    public boolean isLoginIdAvailable(String loginId) {
+        return !appUserRepository.existsById(loginId);
+    }
+
+    /**
+     * 회원가입. 아이디가 이미 있으면 409 USER_LOGIN_ID_TAKEN.
+     * 같은 아이디로 동시에 가입하면 늦은 쪽은 저장할 때 DataIntegrityViolationException이 난다 (AuthService가 409로 바꾼다)
+     */
     @Transactional
-    public UserResponseDto create(UserCreateRequestDto request) {
-        AppUser user = appUserRepository.save(AppUser.create(request.nationality(), request.language()));
+    public UserResponseDto signUp(String loginId, String rawPassword, String name, Nationality nationality,
+                                  Language language) {
+        if (appUserRepository.existsById(loginId)) {
+            throw new UserException(UserErrorType.LOGIN_ID_TAKEN);
+        }
+        AppUser user = AppUser.signUp(loginId, passwordEncoder.encode(rawPassword), name, nationality, language);
+        return UserResponseDto.from(appUserRepository.saveAndFlush(user));
+    }
+
+    /** 아이디·비밀번호가 맞으면 그 사용자. 아이디가 없든 비밀번호가 틀리든 같은 401 USER_INVALID_CREDENTIALS */
+    public UserResponseDto checkCredentials(String loginId, String rawPassword) {
+        return appUserRepository.findById(loginId)
+                .filter(AppUser::canLogIn)
+                .filter(user -> passwordEncoder.matches(rawPassword, user.getPasswordHash()))
+                .map(UserResponseDto::from)
+                .orElseThrow(() -> new UserException(UserErrorType.INVALID_CREDENTIALS));
+    }
+
+    /** 토큰의 사용자 (GET /api/users/me). 토큰이 없으면 401 USER_LOGIN_REQUIRED, 잘못됐으면 401 USER_INVALID_TOKEN */
+    public UserResponseDto getMe() {
+        return UserResponseDto.from(currentUser());
+    }
+
+    /** 내 이름·국적·언어 중 보낸 것만 바꾼다 */
+    @Transactional
+    public UserResponseDto updateMe(String name, Nationality nationality, Language language) {
+        AppUser user = currentUser();
+        user.updateProfile(name, nationality, language);
         return UserResponseDto.from(user);
     }
 
-    /** 없는 userId면 404 USER_NOT_FOUND */
+    /**
+     * userId의 사용자. 다른 도메인이 "이 사용자로" 처리할 때 부른다 (도장·한걸음·사진·엽서·나의 기록·추천 언어).
+     * 요청 안에서는 토큰의 사용자와 같아야 한다: 토큰 없음 401 USER_LOGIN_REQUIRED, 잘못된 토큰 401 USER_INVALID_TOKEN,
+     * 다른 사람 403 USER_FORBIDDEN. 요청 밖(비동기 엽서 생성 등 서버 내부 작업)에서는 확인하지 않는다.
+     * 없는 userId면 404 USER_NOT_FOUND
+     */
     public UserResponseDto getUser(String userId) {
+        authorize(userId);
         return appUserRepository.findById(userId)
                 .map(UserResponseDto::from)
                 .orElseThrow(() -> new UserException(UserErrorType.NOT_FOUND, "userId=" + userId));
+    }
+
+    private void authorize(String userId) {
+        if (!enforceToken) return;
+        AuthContext auth = AuthContext.current();
+        switch (auth.state()) {
+            case NO_REQUEST -> { }
+            case ANONYMOUS -> throw new UserException(UserErrorType.LOGIN_REQUIRED);
+            case INVALID -> throw new UserException(UserErrorType.INVALID_TOKEN);
+            case AUTHENTICATED -> {
+                if (!auth.userId().equals(userId)) {
+                    throw new UserException(UserErrorType.FORBIDDEN, "토큰과 다른 userId");
+                }
+            }
+        }
+    }
+
+    private AppUser currentUser() {
+        AuthContext auth = AuthContext.current();
+        return switch (auth.state()) {
+            case AUTHENTICATED -> appUserRepository.findById(auth.userId())
+                    .orElseThrow(() -> new UserException(UserErrorType.NOT_FOUND, "토큰의 사용자가 없음"));
+            case INVALID -> throw new UserException(UserErrorType.INVALID_TOKEN);
+            case ANONYMOUS, NO_REQUEST -> throw new UserException(UserErrorType.LOGIN_REQUIRED);
+        };
     }
 
     /**

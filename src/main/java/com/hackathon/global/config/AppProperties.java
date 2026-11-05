@@ -16,8 +16,23 @@ public record AppProperties(
         @DefaultValue Tour tour,
         @DefaultValue Station station,
         @DefaultValue Demo demo,
-        @DefaultValue Visit visit
+        @DefaultValue Visit visit,
+        @DefaultValue Auth auth
 ) {
+
+    /**
+     * 앱 내 로그인 JWT.
+     * - jwtSecret: HS256 서명 키, 32바이트 이상 (환경변수 APP_AUTH_JWT_SECRET). 비어 있으면 서버를 켤 때 임시 키를 만든다
+     *   (재시작하면 모든 토큰이 무효가 되어 다시 로그인해야 한다 — 배포 환경에서는 꼭 넣는다)
+     * - tokenTtl: 토큰 유효 기간. 자동 로그인을 위해 길게 둔다
+     * - enforceToken: userId를 쓰는 API에서 토큰의 사용자와 같은지 확인한다. 테스트 설정에서만 끈다 (실제로는 늘 켠다)
+     */
+    public record Auth(
+            @DefaultValue("") String jwtSecret,
+            @DefaultValue("30d") Duration tokenTtl,
+            @DefaultValue("true") boolean enforceToken
+    ) {
+    }
 
     /** 방문 도장. 장소에서 이 반경(미터) 안이어야 도장을 준다 */
     public record Visit(@DefaultValue("200") int stampRadiusMeters) {

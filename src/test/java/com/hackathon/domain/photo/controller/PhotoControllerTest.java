@@ -15,6 +15,10 @@ import com.hackathon.domain.photo.exception.PhotoErrorType;
 import com.hackathon.domain.photo.exception.PhotoException;
 import com.hackathon.domain.photo.service.PhotoInfo;
 import com.hackathon.domain.photo.service.PhotoService;
+import com.hackathon.domain.user.service.UserService;
+import com.hackathon.global.common.Language;
+import com.hackathon.global.common.Nationality;
+import com.hackathon.support.TestUsers;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,11 +42,11 @@ class PhotoControllerTest {
     @Autowired
     PhotoService photoService;
 
-    private String createUser() throws Exception {
-        String body = mvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nationality\": \"VN\", \"language\": \"VI\"}"))
-                .andReturn().getResponse().getContentAsString();
-        return JsonPath.read(body, "$.data.userId");
+    @Autowired
+    UserService userService;
+
+    private String createUser() {
+        return TestUsers.create(userService, Nationality.VN, Language.VI);
     }
 
     private ResultActions upload(MockMultipartFile file, String userId) throws Exception {

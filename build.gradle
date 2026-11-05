@@ -35,6 +35,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0'
+	// JWT: 로그인한 사용자에게 서버가 발급하는 인증 토큰 (HS256)
+	// 코드는 jjwt-api만 쓰고, 구현(impl)·JSON 처리(jackson)는 실행할 때만 필요하다
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+	// 비밀번호 해시(BCrypt). Spring Security 전체가 아니라 암호화 모듈만 넣는다 (로그인 화면·필터가 생기지 않는다)
+	implementation 'org.springframework.security:spring-security-crypto'
 	// 엽서 합성(ImageIO)에서 webp 사진을 읽는다. JDK ImageIO는 jpeg·png만 읽는다
 	runtimeOnly 'com.twelvemonkeys.imageio:imageio-webp:3.12.0'
 	compileOnly 'org.projectlombok:lombok'

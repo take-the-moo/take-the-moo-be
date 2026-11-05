@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.hackathon.domain.place.curation.PlaceCuration;
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.repository.PlaceRepository;
-import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
+import com.hackathon.support.TestUsers;
 import com.hackathon.domain.user.service.UserService;
 import com.hackathon.domain.visit.dto.response.PlaceVisitorCount;
 import com.hackathon.domain.visit.entity.Visit;
@@ -105,7 +105,7 @@ class VisitControllerTest {
     }
 
     private String newUser(Nationality nationality, Language language) {
-        return userService.create(new UserCreateRequestDto(nationality, language)).userId();
+        return TestUsers.create(userService, nationality, language);
     }
 
     private ResultActions stampAt(String user, Place place, Place at) throws Exception {
