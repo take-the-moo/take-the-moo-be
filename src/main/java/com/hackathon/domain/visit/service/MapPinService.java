@@ -10,10 +10,11 @@ import com.hackathon.domain.visit.repository.VisitRepository;
 import com.hackathon.global.common.Nationality;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -34,16 +35,20 @@ public class MapPinService {
 
     /** 노출 중인 장소 전부. 방문자 많은 순 → 한걸음 많은 순 → placeId 순 */
     public List<MapPinResponseDto> getPins() {
-        Map<Long, Set<String>> visitorsByPlace = visitRepository.findPlaceVisitors().stream()
-                .collect(Collectors.groupingBy(PlaceVisitor::placeId,
-                        Collectors.mapping(PlaceVisitor::userId, Collectors.toSet())));
-        Set<String> allVisitors = visitorsByPlace.values().stream()
-                .flatMap(Set::stream)
-                .collect(Collectors.toSet());
+        List<Place> places = placeService.getActivePlaces();
+        if (places.isEmpty()) return List.of();
+
+        // 노출 장소의 방문자만 읽고, 장소별 방문자와 전체 방문자(국적 조회용)를 한 번에 모은다
+        Map<Long, Set<String>> visitorsByPlace = new HashMap<>();
+        Set<String> allVisitors = new HashSet<>();
+        for (PlaceVisitor visitor : visitRepository.findPlaceVisitors(places.stream().map(Place::getId).toList())) {
+            visitorsByPlace.computeIfAbsent(visitor.placeId(), id -> new HashSet<>()).add(visitor.userId());
+            allVisitors.add(visitor.userId());
+        }
         Map<String, Nationality> nationalities = userService.getNationalities(allVisitors);
         Map<Long, Long> reviewCounts = reviewService.countByPlace();
 
-        return placeService.getActivePlaces().stream()
+        return places.stream()
                 .map(place -> pin(place, visitorsByPlace.getOrDefault(place.getId(), Set.of()), nationalities,
                         reviewCounts.getOrDefault(place.getId(), 0L)))
                 .sorted(Comparator.comparingLong(MapPinResponseDto::visitorCount).reversed()

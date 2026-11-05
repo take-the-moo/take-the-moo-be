@@ -126,4 +126,34 @@ class MapPinTest {
 
         assertThat(pins.indexOf(pin)).as("방문자 많은 순").isLessThan(pins.indexOf(emptyPin));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void 방문자가_같으면_한걸음_많은_순이고_국적_인원이_같으면_국적_코드_순서() throws Exception {
+        Long fewerReviews = savePlace("한걸음적은곳", true);
+        Long moreReviews = savePlace("한걸음많은곳", true);
+
+        LocalDate today = SeoulTime.today();
+        String jp = user(Nationality.JP);
+        String vn = user(Nationality.VN);
+        // 두 장소 모두 방문자 2명 (JP 1, VN 1). 넣는 순서를 일부러 JP 먼저
+        visit(jp, fewerReviews, today);
+        visit(vn, fewerReviews, today);
+        visit(jp, moreReviews, today);
+        visit(vn, moreReviews, today);
+        reviewRepository.save(Review.create(moreReviews, vn, "좋아요", Language.KO));
+
+        String body = mvc.perform(get("/api/map/pins"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        List<Map<String, Object>> pins = JsonPath.read(body, "$.data");
+
+        Map<String, Object> more = pinOf(pins, moreReviews);
+        Map<String, Object> fewer = pinOf(pins, fewerReviews);
+        assertThat(pins.indexOf(more)).as("방문자가 같으면 한걸음 많은 곳이 먼저").isLessThan(pins.indexOf(fewer));
+        assertThat((List<Map<String, Object>>) fewer.get("nationalities"))
+                .as("인원이 같으면 국적 코드 순서 (VN이 JP보다 앞)")
+                .extracting(n -> n.get("nationality") + ":" + n.get("count"))
+                .containsExactly("VN:1", "JP:1");
+    }
 }
