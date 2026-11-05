@@ -369,7 +369,7 @@ F2 지금 추천. 앱을 열자마자 질문 없이 부른다. 지금 시간·�
 | weather | 날씨 시뮬레이션 `CLEAR, RAINY, SNOWY`. 없으면 기상청 실제 날씨 |
 | time | 시각 시뮬레이션 `HH:mm` (서울, 예: `15:00`). 없으면 지금 |
 
-기준 위치 = `lat`·`lng` → 없으면 `stationId` → 둘 다 없으면 기본 역(독립문).
+기준 위치 = `lat`·`lng` → 없으면 `stationId` → 둘 다 없으면 기본 위치(명지대 인문캠퍼스, `context.baseStation`에 `"명지대 인문캠퍼스"`). 발표장에서 GPS가 안 잡히면 위치 없이 보내면 된다.
 
 ```bash
 curl 'localhost:8080/api/now?userId=linh_2026&stationId=12&weather=RAINY&time=15:00'
@@ -474,7 +474,7 @@ F4 주변 장소. 현장 해설을 볼 수 있는 장소를 가까운 순으로 
 | stationId | `GET /api/stations`에서 고른 역. `lat`·`lng`가 있으면 무시한다 |
 | limit | 개수. 기본 5, 최대 20 (범위를 벗어나면 1~20으로 맞춘다) |
 
-기준 위치 = `lat`·`lng` → 없으면 `stationId` → 둘 다 없으면 기본 역(독립문).
+기준 위치 = `lat`·`lng` → 없으면 `stationId` → 둘 다 없으면 기본 위치(명지대 인문캠퍼스, `context.baseStation`에 `"명지대 인문캠퍼스"`). 발표장에서 GPS가 안 잡히면 위치 없이 보내면 된다.
 
 ```bash
 curl 'localhost:8080/api/places/nearby?lat=37.5745&lng=126.9577&limit=3'

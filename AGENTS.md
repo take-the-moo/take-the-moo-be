@@ -119,7 +119,7 @@ com.hackathon
 - **실행 시점**: 서버 시작 시 역 테이블이 비어 있으면 1회 + 장소 동기화 스케줄 때 함께 1회 (원천 갱신은 분기 1회). `app.station.sync-enabled=false`면 건너뛴다
 - 서울 전체 역을 저장하고 **`outStnNum`(역 외부코드, 행마다 유일)**으로 upsert한다. 환승역은 호선마다 한 행이고, 같은 이름이라도 위치가 다를 수 있다 (예: 신촌 2호선 ≠ 신촌 경의중앙선)
 - 가까운 역 계산은 저장된 전체 역에서 `GeoUtils`로 한다
-- **"역 선택" 목록**(위치 거부·데모용, `GET /api/stations`)은 거리로 거르지 않고 `app.station.selectable-names`의 서대문 생활권 역만 그 순서대로 보여준다: 독립문·무악재·홍제·서대문·충정로(경기대입구)·아현·이대·신촌·가좌. 이름은 `station.name`과 정확히 같아야 하고(충정로는 DB에 `충정로(경기대입구)`), 같은 이름의 호선은 모두 보여준다 (신촌 2호선·경의중앙선). 아무것도 고르지 않으면 `app.demo.default-station`(독립문)
+- **"역 선택" 목록**(위치 거부·데모용, `GET /api/stations`)은 거리로 거르지 않고 `app.station.selectable-names`의 서대문 생활권 역만 그 순서대로 보여준다: 독립문·무악재·홍제·서대문·충정로(경기대입구)·아현·이대·신촌·가좌. 이름은 `station.name`과 정확히 같아야 하고(충정로는 DB에 `충정로(경기대입구)`), 같은 이름의 호선은 모두 보여준다 (신촌 2호선·경의중앙선). 목록의 기본 역은 `app.demo.default-station`(독립문)이고, 위치·역을 아무것도 안 보내면 기본 위치 `app.demo.default-latitude`·`longitude`(명지대 인문캠퍼스)를 쓴다
 - 장소와 같이 실패해도 기존 데이터를 유지하고, 키가 없거나 테스트·목 모드면 외부 호출 없이 동작한다
 
 ## 응답·예외 컨벤션
@@ -172,7 +172,8 @@ com.hackathon
 | `app.station.sync-enabled` / `selectable-names` | 역 동기화 켜기 / 역 선택 목록에 보여줄 역 이름 (기본 `true` / 서대문 생활권 9개) | - |
 | `app.tour.sync-enabled` / `sync-cron` | 장소 동기화 켜기 / 주기 (기본 `true` / 매일 04:00) | - |
 | `app.tour.l-dong-regn-cd` / `l-dong-signgu-cd` | 법정동 코드 서울 / 서대문구 (기본 `11` / `410`). 예전 `areaCode`는 쓰지 않는다 | - |
-| `app.demo.default-station` | 위치·역이 없을 때 기준 역 (기본 `독립문`, T Data 역 한글명) | 기본값 |
+| `app.demo.default-latitude` / `default-longitude` / `default-name` | 위치·역이 없을 때 기준 위치 (기본 명지대 인문캠퍼스 `37.5803, 126.9233` — 발표장은 GPS가 안 잡힌다). 좌표를 비우면 `default-station`을 쓴다 | 기본값 |
+| `app.demo.default-station` | 기본 좌표가 비었을 때 기준 역, "역 선택" 목록의 기본 역 (기본 `독립문`, T Data 역 한글명) | 기본값 |
 | `app.auth.jwt-secret` | 로그인 토큰(JWT) 서명 키, 32바이트 이상 (환경변수 `APP_AUTH_JWT_SECRET`). **배포 환경에서는 꼭 넣는다** | 서버를 켤 때 임시 키 — 재시작하면 모두 다시 로그인 |
 | `app.auth.token-ttl` / `enforce-token` | 토큰 유효 기간 / userId와 토큰 사용자 일치 확인 (기본 `30d` / `true`, 테스트만 `false`) | - |
 | `app.visit.stamp-radius-meters` | 방문 도장을 줄 장소 반경(미터, 기본 `200`) | 기본값 |

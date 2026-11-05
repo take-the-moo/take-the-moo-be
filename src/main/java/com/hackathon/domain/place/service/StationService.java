@@ -35,7 +35,7 @@ public class StationService {
     private final AppProperties properties;
 
     /**
-     * 기준 위치를 정한다. 좌표 → 고른 역 → 기본 역 순서.
+     * 기준 위치를 정한다. 좌표 → 고른 역 → 기본 위치(app.demo 좌표, 없으면 기본 역) 순서.
      * - lat·lng는 둘 다 있어야 한다. 하나만 오거나 범위를 벗어나면 422 STATION_INVALID_LOCATION
      * - 없는 stationId면 404 STATION_NOT_FOUND
      */
@@ -74,7 +74,12 @@ public class StationService {
     }
 
     private BaseLocation defaultLocation() {
-        String name = properties.demo().defaultStation();
+        AppProperties.Demo demo = properties.demo();
+        if (demo.defaultLatitude() != null && demo.defaultLongitude() != null) {
+            return new BaseLocation(demo.defaultLatitude(), demo.defaultLongitude(), demo.defaultName(),
+                    BaseLocation.Source.DEFAULT);
+        }
+        String name = demo.defaultStation();
         return findDefaultStation()
                 .map(station -> new BaseLocation(station.getLatitude(), station.getLongitude(), name,
                         BaseLocation.Source.DEFAULT))
