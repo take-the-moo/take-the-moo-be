@@ -62,7 +62,8 @@ public record AppProperties(
      */
     public record Station(
             @DefaultValue("") String apiKey,
-            @DefaultValue("http://t-data.seoul.go.kr/apig/apiman-gateway/tapi/TaimsKsccDvSubwayStationGeom/1.0") String baseUrl,
+            // http로 부르면 302로 https에 리다이렉트되므로 처음부터 https를 쓴다
+            @DefaultValue("https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/TaimsKsccDvSubwayStationGeom/1.0") String baseUrl,
             @DefaultValue("true") boolean syncEnabled,
             // 위치 거부 시 "역 선택" 목록에 보여줄 범위: 기준 역(app.demo.default-station)에서 이 거리 안의 역
             @DefaultValue("3000") int selectableRadiusMeters

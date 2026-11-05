@@ -92,9 +92,10 @@ com.hackathon
 - 지역 필터는 법정동 코드(`lDongRegnCd=11`, `lDongSignguCd=410`)로 한다. 예전 `areaCode`는 쓰지 않는다
 
 ### 지하철역: T Data 지하철역 좌표정보
-- 엔드포인트 `app.station.base-url` + `apikey`(필수), `startRow`·`rowCnt`(페이지). 응답의 `convX` = 경도, `convY` = 위도
+- 엔드포인트 `app.station.base-url`(https) + `apikey`(필수), `startRow`·`rowCnt`. 응답은 JSON 배열 `[{outStnNum, stnKrNm, lineNm, convX, convY}]`이고 `convX` = 경도, `convY` = 위도 (문자열)
+- 전체 784건(2026-11 기준)이 `rowCnt=1000` 한 번에 온다
 - **실행 시점**: 서버 시작 시 역 테이블이 비어 있으면 1회 + 장소 동기화 스케줄 때 함께 1회 (원천 갱신은 분기 1회). `app.station.sync-enabled=false`면 건너뛴다
-- 서울 전체 역을 저장하고 (수백 건이라 부담 없음) **역명 + 호선**으로 upsert한다. 환승역은 호선마다 한 행이다
+- 서울 전체 역을 저장하고 **`outStnNum`(역 외부코드, 행마다 유일)**으로 upsert한다. 환승역은 호선마다 한 행이고, 같은 이름이라도 위치가 다를 수 있다 (예: 신촌 2호선 ≠ 신촌 경의중앙선)
 - 가까운 역 계산은 저장된 전체 역에서 `GeoUtils`로 한다. "역 선택" 목록은 기준 역에서 `app.station.selectable-radius-meters`(기본 3km) 안의 역만 보여준다
 - 장소와 같이 실패해도 기존 데이터를 유지하고, 키가 없거나 테스트·목 모드면 외부 호출 없이 동작한다
 
