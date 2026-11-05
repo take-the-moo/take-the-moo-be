@@ -8,6 +8,7 @@ services:
       - DB_URL=jdbc:mysql://mysql:3306/hackathon
       # 값 없이 이름만 쓰면 셸/.env에 있을 때만 넘긴다. 기본값을 넣으면 환경변수가 yml보다 우선해서 application.yml 값을 덮는다
       - ANTHROPIC_API_KEY
+      - OPENAI_API_KEY
       - LLM_MOCK
     depends_on:
       mysql:
