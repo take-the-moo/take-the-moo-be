@@ -168,6 +168,7 @@ com.hackathon
 | `app.tour.sync-enabled` / `sync-cron` | 장소 동기화 켜기 / 주기 (기본 `true` / 매일 04:00) | - |
 | `app.tour.l-dong-regn-cd` / `l-dong-signgu-cd` | 법정동 코드 서울 / 서대문구 (기본 `11` / `410`). 예전 `areaCode`는 쓰지 않는다 | - |
 | `app.demo.default-station` | 위치·역이 없을 때 기준 역 (기본 `독립문`, T Data 역 한글명) | 기본값 |
+| `app.visit.stamp-radius-meters` | 방문 도장을 줄 장소 반경(미터, 기본 `200`) | 기본값 |
 
 키는 `application.yml`(gitignore) 또는 환경변수(`APP_WEATHER_KMA_SERVICE_KEY`, `APP_TOUR_SERVICE_KEY`, `APP_STATION_API_KEY`)로 넣는다. AI 키는 `spring.ai.anthropic.api-key`(`ANTHROPIC_API_KEY`), `spring.ai.openai.api-key`(`OPENAI_API_KEY`).
 

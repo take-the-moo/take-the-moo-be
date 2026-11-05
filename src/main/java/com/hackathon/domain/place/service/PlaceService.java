@@ -5,6 +5,8 @@ import com.hackathon.domain.place.entity.PlaceStatus;
 import com.hackathon.domain.place.exception.PlaceErrorType;
 import com.hackathon.domain.place.exception.PlaceException;
 import com.hackathon.domain.place.repository.PlaceRepository;
+import java.util.Collection;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,5 +26,11 @@ public class PlaceService {
         return placeRepository.findById(placeId)
                 .filter(place -> place.getStatus() == PlaceStatus.ACTIVE)
                 .orElseThrow(() -> new PlaceException(PlaceErrorType.NOT_FOUND, "placeId=" + placeId));
+    }
+
+    /** contentId로 노출 중(ACTIVE)인 장소를 찾는다. 없거나 노출하지 않는 장소는 결과에서 빠진다 (F5 코스) */
+    public List<Place> getActivePlacesByContentIds(Collection<String> contentIds) {
+        if (contentIds.isEmpty()) return List.of();
+        return placeRepository.findAllByContentIdInAndStatus(contentIds, PlaceStatus.ACTIVE);
     }
 }
