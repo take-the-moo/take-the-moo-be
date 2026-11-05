@@ -53,14 +53,16 @@
 | F3 | POST | `/api/scenes` | 맞춤 장면 생성 (국적 바꿔 재생성 가능) |
 | F4 | GET | `/api/places/nearby` | 주변 장소 후보 |
 | F4 | POST | `/api/explanations` | 선택한 장소 해설 (사용자 언어로 번역) |
-| F4·F6·F7 | POST | `/api/photos` | 사진 업로드 |
+| F4·F6·F7 | POST | `/api/photos` | 사진 업로드 (multipart, 10MB 이하 jpeg·png·webp) |
+| F4·F6·F7 | GET | `/api/photos/{photoId}` | 사진 파일 |
 | F5 | POST | `/api/visits` | 방문 도장 |
 | F5 | GET | `/api/users/{userId}/visits` | 날짜별 방문 기록, 코스 진행도 |
 | F6 | GET | `/api/map/pins` | 장소별 방문 수·국적 분포 |
 | F6 | GET | `/api/places/{placeId}/reviews` | 한걸음 목록 (보는 사람 언어로 번역) |
 | F6 | POST | `/api/places/{placeId}/reviews` | 한걸음 작성 (부적절하면 422 `REVIEW_INAPPROPRIATE`) |
-| F7 | POST | `/api/postcards` | 엽서 생성 시작 (비동기) |
-| F7 | GET | `/api/postcards/{postcardId}` | 생성 상태·결과·다운로드 URL |
+| F7 | POST | `/api/postcards` | 엽서 생성 시작 (비동기). 사진 1장 + 한 문장 + 템플릿 |
+| F7 | GET | `/api/postcards/{postcardId}` | 생성 상태 (`PENDING`→`PROCESSING`→`COMPLETED`/`FAILED`), 완료면 이미지 URL |
+| F7 | GET | `/api/postcards/{postcardId}/image` | 엽서 이미지(JPEG). `?download=true`면 파일로 내려받기 |
 
 공통 코드값 — 국적 `nationality`: `VN, CN, JP, MN, UZ, US, OTHER` / 언어 `language`: `KO, EN, VI, ZH, JA, MN, UZ`. 대문자 상수 그대로 주고받는다.
 
