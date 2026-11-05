@@ -13,6 +13,7 @@ public record AppProperties(
         @DefaultValue Storage storage,
         @DefaultValue Weather weather,
         @DefaultValue Tour tour,
+        @DefaultValue Station station,
         @DefaultValue Demo demo
 ) {
 
@@ -54,7 +55,21 @@ public record AppProperties(
     ) {
     }
 
+    /**
+     * 서울교통빅데이터플랫폼(T Data) 지하철역 좌표정보 API. 응답의 convX = 경도, convY = 위도.
+     * 원천 갱신이 분기 1회라 서버 시작 시 역 테이블이 비어 있으면 1회 + 장소 동기화 스케줄 때 함께 받는다.
+     * apiKey가 비어 있으면 건너뛰고 DB에 있는 역으로 동작한다.
+     */
+    public record Station(
+            @DefaultValue("") String apiKey,
+            @DefaultValue("http://t-data.seoul.go.kr/apig/apiman-gateway/tapi/TaimsKsccDvSubwayStationGeom/1.0") String baseUrl,
+            @DefaultValue("true") boolean syncEnabled,
+            // 위치 거부 시 "역 선택" 목록에 보여줄 범위: 기준 역(app.demo.default-station)에서 이 거리 안의 역
+            @DefaultValue("3000") int selectableRadiusMeters
+    ) {
+    }
+
     /** 위치·역을 못 받았을 때 기준이 되는 역 */
-    public record Demo(@DefaultValue("dongnimmun") String defaultStation) {
+    public record Demo(@DefaultValue("독립문") String defaultStation) {
     }
 }

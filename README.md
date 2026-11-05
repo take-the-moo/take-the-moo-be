@@ -90,4 +90,5 @@ src/main/resources/{application.yml, prompts.yml}
 | `app.weather.kma-service-key` / `APP_WEATHER_KMA_SERVICE_KEY` | (없음) | 기상청 초단기실황 키 (Decoding 키). 없으면 시뮬레이션·기본 날씨 |
 | `app.tour.service-key` / `APP_TOUR_SERVICE_KEY` | (없음) | TourAPI 키 (Decoding 키). 장소를 매일 04:00에 DB로 동기화. 없으면 건너뜀 |
 | `app.tour.sync-enabled` | `true` | 장소 동기화 켜기. 발표 전에는 `false` |
-| `app.demo.default-station` | `dongnimmun` | 위치·역을 못 받았을 때 기준 역 |
+| `app.station.api-key` / `APP_STATION_API_KEY` | (없음) | T Data 지하철역 좌표정보 인증키. 서버 시작 시(비어 있으면)와 장소 동기화 때 역을 DB로 동기화 |
+| `app.demo.default-station` | `독립문` | 위치·역을 못 받았을 때 기준 역 |
