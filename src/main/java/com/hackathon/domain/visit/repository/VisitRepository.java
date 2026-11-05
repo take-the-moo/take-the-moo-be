@@ -1,5 +1,6 @@
 package com.hackathon.domain.visit.repository;
 
+import com.hackathon.domain.visit.dto.response.PlaceVisitor;
 import com.hackathon.domain.visit.dto.response.PlaceVisitorCount;
 import com.hackathon.domain.visit.entity.Visit;
 import java.time.LocalDate;
@@ -21,6 +22,9 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     long countByUserId(String userId);
 
+    /** 최신 날짜 순, 같은 날은 도장을 찍은 순서 */
+    List<Visit> findAllByUserIdOrderByVisitedDateDescIdAsc(String userId);
+
     @Query("select distinct v.placeId from Visit v where v.userId = :userId")
     List<Long> findVisitedPlaceIds(@Param("userId") String userId);
 
@@ -29,6 +33,14 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     @Modifying
     @Query("delete from Visit v where v.placeId = :placeId and v.userId in :userIds")
     int deleteByPlaceIdAndUserIdIn(@Param("placeId") Long placeId, @Param("userIds") Collection<String> userIds);
+
+    /** 주어진 장소들을 다녀간 사람 (장소 × 사람 중복 없이). F6 흔적 지도의 방문자 수·국적 분포 */
+    @Query("""
+            select distinct new com.hackathon.domain.visit.dto.response.PlaceVisitor(v.placeId, v.userId)
+            from Visit v
+            where v.placeId in :placeIds
+            """)
+    List<PlaceVisitor> findPlaceVisitors(@Param("placeIds") Collection<Long> placeIds);
 
     /** 한 사람이 여러 날 와도 1명으로 센다 */
     @Query("""

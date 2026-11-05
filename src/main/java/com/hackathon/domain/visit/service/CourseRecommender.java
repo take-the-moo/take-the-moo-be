@@ -1,7 +1,6 @@
 package com.hackathon.domain.visit.service;
 
 import com.hackathon.domain.place.entity.Place;
-import com.hackathon.domain.place.service.PlaceService;
 import com.hackathon.domain.visit.course.Course;
 import com.hackathon.domain.visit.course.CourseRegistry;
 import com.hackathon.domain.visit.dto.response.CourseStopDto;
@@ -16,13 +15,9 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
@@ -30,13 +25,12 @@ import org.springframework.stereotype.Component;
  * 코스: 이번 도장으로 완주한 코스 → 미완주 중 많이 진행한 코스 → 남은 거리가 짧은 코스 → 파일 순서
  * 다음 장소: 지금 시간대에 맞고 비·눈이면 실내인 곳 중 가장 가까운 곳. 그런 곳이 없으면 남은 곳 중 가장 가까운 곳.
  */
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CourseRecommender {
 
     private final CourseRegistry courseRegistry;
-    private final PlaceService placeService;
+    private final CourseProgressReader courseProgressReader;
     private final WeatherService weatherService;
 
     /** visitedPlaceIds에는 방금 찍은 장소도 들어 있어야 한다. 이어 갈 코스가 없으면 null */
@@ -45,33 +39,18 @@ public class CourseRecommender {
         List<Course> courses = courseRegistry.findByContentId(current.getContentId());
         if (courses.isEmpty()) return null;
 
-        Map<String, Place> places = placeService.getActivePlacesByContentIds(
-                        courses.stream().flatMap(course -> course.contentIds().stream()).collect(Collectors.toSet()))
-                .stream()
-                .collect(Collectors.toMap(Place::getContentId, Function.identity()));
-
-        List<Progress> progresses = new ArrayList<>();
-        for (Course course : courses) {
-            if (!places.keySet().containsAll(course.contentIds())) {
-                // 다 돌 수 없는 코스를 진행 중으로 보여 주지 않는다 (동기화 전이거나 장소가 비활성이 된 경우)
-                log.warn("노출 중이 아닌 장소가 있어 추천에서 뺀 코스: courseId={}", course.courseId());
-                continue;
-            }
-            List<Place> stops = course.contentIds().stream().map(places::get).toList();
-            progresses.add(Progress.of(course, stops, current, visitedPlaceIds));
-        }
-
-        Optional<Progress> justCompleted = firstVisit
-                ? progresses.stream().filter(Progress::completed).findFirst()
+        List<CourseProgress> progresses = courseProgressReader.read(courses, visitedPlaceIds);
+        Optional<CourseProgress> justCompleted = firstVisit
+                ? progresses.stream().filter(CourseProgress::completed).findFirst()
                 : Optional.empty();
-        Optional<Progress> chosen = justCompleted.or(() -> progresses.stream()
+        Optional<CourseProgress> chosen = justCompleted.or(() -> progresses.stream()
                 .filter(progress -> !progress.completed())
-                // 정렬은 안정적이라 앞의 두 조건이 같으면 파일 순서를 유지한다
-                .min(Comparator.comparingInt(Progress::visitedCount).reversed()
-                        .thenComparingInt(Progress::remainingMeters)));
+                // min은 같은 값이면 앞의 것을 고르므로, 앞의 두 조건이 같으면 파일 순서를 유지한다
+                .min(Comparator.comparingInt(CourseProgress::visitedCount).reversed()
+                        .thenComparingInt(progress -> shortestRemainingMeters(current, progress.remaining()))));
         if (chosen.isEmpty()) return null;
 
-        Progress progress = chosen.get();
+        CourseProgress progress = chosen.get();
         NextStopDto next = null;
         if (!progress.completed()) {
             WeatherCondition weather = weatherService.resolve(simulatedWeather).condition();
@@ -79,9 +58,7 @@ public class CourseRecommender {
             next = new NextStopDto(nextPlace.getId(), nextPlace.getName(),
                     GeoUtils.walkingMinutes(distance(current, nextPlace)));
         }
-        List<CourseStopDto> stops = progress.stops().stream()
-                .map(stop -> new CourseStopDto(stop.getId(), stop.getName(), visitedPlaceIds.contains(stop.getId())))
-                .toList();
+        List<CourseStopDto> stops = progress.stopDtos();
         return new RecommendedCourseDto(progress.course().courseId(), progress.course().localizedName(language),
                 progress.visitedCount(), stops.size(), progress.completed(), stops, next);
     }
@@ -113,21 +90,5 @@ public class CourseRecommender {
 
     private static int distance(Place a, Place b) {
         return GeoUtils.distanceMeters(a.getLatitude(), a.getLongitude(), b.getLatitude(), b.getLongitude());
-    }
-
-    private record Progress(Course course, List<Place> stops, List<Place> remaining, int remainingMeters) {
-
-        static Progress of(Course course, List<Place> stops, Place current, Set<Long> visitedPlaceIds) {
-            List<Place> remaining = stops.stream().filter(stop -> !visitedPlaceIds.contains(stop.getId())).toList();
-            return new Progress(course, stops, remaining, shortestRemainingMeters(current, remaining));
-        }
-
-        int visitedCount() {
-            return stops.size() - remaining.size();
-        }
-
-        boolean completed() {
-            return remaining.isEmpty();
-        }
     }
 }
