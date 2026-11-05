@@ -77,6 +77,7 @@ src/main/resources/{application.yml, prompts.yml}
 | 키 | 기본값 | 설명 |
 |---|---|---|
 | `spring.ai.anthropic.api-key` | (없음) | Anthropic API 키 — `application.yml`(gitignore)에 직접 또는 환경변수 `ANTHROPIC_API_KEY` |
+| `spring.ai.openai.api-key` | (없음) | OpenAI API 키 — `application.yml`(gitignore)에 직접 또는 환경변수 `OPENAI_API_KEY` |
 | `LLM_MOCK` / `llm.mock` | `false` | 목 모드 |
 | `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | `jdbc:mysql://localhost:3307/hackathon` / `hackathon` / `hackathon` | MySQL 접속 (compose 개발용 계정) |
 | `DB_PORT` | `3307` | compose가 여는 MySQL 호스트 포트 |
