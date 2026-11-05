@@ -292,6 +292,51 @@ F3 맞춤 장면. 장소 이야기를 요청 언어와 쉬운 한국어로, 관�
 
 ---
 
+### POST /api/places/{placeId}/reviews
+
+F6 한걸음 작성. 장소에 한 줄 후기를 남긴다. 저장 전에 두 번 거르고, 걸리면 저장하지 않는다.
+
+1. 링크·이메일·전화번호(숫자 9자리 이상)가 있으면 바로 거절한다 (AI 없이)
+2. AI가 욕설·혐오(국가·민족 비하 포함)·광고·스팸을 검사하고, `language`가 없으면 작성 언어를 정한다
+
+요청 (`Content-Type: application/json`)
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| userId | string | O | `POST /api/users`가 돌려준 userId |
+| content | string | O | 한 줄 후기, 200자 이하. 앞뒤 공백은 지운다 |
+| language | string | - | 실제로 쓴 언어 (`KO, EN, VI, ZH, JA, MN, UZ`). 비우면 서버가 글을 보고 정한다. **사용자 설정 언어를 그대로 넣지 않는다** |
+
+```json
+{ "userId": "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c", "content": "아침에 오면 한적해서 사진 찍기 좋아요", "language": "KO" }
+```
+
+응답 201
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 201,
+  "message": "성공적으로 생성하였습니다.",
+  "data": {
+    "reviewId": 12,
+    "placeId": 7,
+    "content": "아침에 오면 한적해서 사진 찍기 좋아요",
+    "language": "KO",
+    "nationality": "VN",
+    "writtenDate": "2026-11-07"
+  }
+}
+```
+
+- 작성자 ID와 작성 시각은 내보내지 않는다. 날짜(`writtenDate`)와 국적까지만
+- 사진 첨부(`photoId`)는 사진 API가 생기면 추가한다
+- 목 모드에서는 AI 검사를 통과로 보고 링크·이메일·전화번호 규칙만 동작한다. `language`를 비우면 `KO`로 저장된다
+
+오류: 422 `REVIEW_INAPPROPRIATE`(부적절한 내용 — 다시 쓰게 한다), 404 `USER_NOT_FOUND`, 404 `PLACE_NOT_FOUND`, 422 `COMMON_VALIDATION_FAILED`(빈 글, 200자 초과), 400 `COMMON_INVALID_REQUEST`(없는 언어 코드), 502 `LLM_CALL_FAILED`, 502 `LLM_INVALID_OUTPUT`, 504 `LLM_TIMEOUT`
+
+---
+
 ### GET /api/health
 
 ```json
@@ -318,6 +363,7 @@ F3 맞춤 장면. 장소 이야기를 요청 언어와 쉬운 한국어로, 관�
 | 415 | `COMMON_UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 422 | `COMMON_VALIDATION_FAILED` | 값 검증 실패 (빈 메시지, 길이 초과, 이미지 형식·크기). message에 필드별 사유 |
 | 422 | `SCENE_SOURCE_MISSING` | 장소에 이야기를 만들 설명(해설·개요)이 없음 |
+| 422 | `REVIEW_INAPPROPRIATE` | 한걸음에 욕설·혐오·광고·연락처가 있음. 저장되지 않는다 |
 | 500 | `COMMON_INTERNAL_ERROR` | 서버 내부 오류 |
 | 502 | `LLM_CALL_FAILED` | AI 호출 실패 (인증·요청 한도·서버 오류 등) |
 | 502 | `LLM_INVALID_OUTPUT` | AI 응답을 정해진 구조로 해석하지 못함 (재시도 후에도) |
