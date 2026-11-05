@@ -1,0 +1,15 @@
+{
+  "excluded": ["3078407", "1019327", "3076677", "130767", "2783484", "4092567", "2759917"],
+  "excludedNames": ["금호아트홀 연세", "긱 라이브하우스", "라이카시네마", "서대문도서관", "신기한놀이터 떼굴떼굴", "코코리컬러 연희본점", "은가어린이공원"],
+  "places": [
+    {"contentId": "130152", "name": "서대문형무소역사관", "timeSlots": ["MORNING", "AFTERNOON"], "indoor": true, "sensitiveHistory": true, "explanation": "서대문형무소역사관은 1908년 10월 일제가 '경성감옥'이라는 이름으로 세운 감옥 자리에 있습니다. 1910년 나라를 빼앗긴 뒤 독립운동이 일어나자 많은 독립운동가가 이곳에 갇혔고, 고문을 받거나 이곳에서 세상을 떠난 분들도 있습니다. 3·1운동에 참여한 유관순 열사도 이곳에서 숨을 거두었습니다. 해방 뒤에도 1987년까지 교도소와 구치소로 쓰였고, 1992년 서대문독립공원이 되었으며, 1998년 역사관으로 문을 열었습니다. 지금은 옥사와 전시를 둘러보며 이곳에서 있었던 일을 기억하고, 자유와 평화의 의미를 생각해 보는 공간입니다."},
+    {"contentId": "127425", "name": "독립문"},
+    {"contentId": "2789102", "name": "독립문영천시장", "timeSlots": ["AFTERNOON", "EVENING"]},
+    {"contentId": "2773278", "name": "모래내시장 먹자골목", "timeSlots": ["AFTERNOON", "EVENING"]},
+    {"contentId": "2813170", "name": "국립대한민국임시정부기념관", "sensitiveHistory": true},
+    {"contentId": "128622", "name": "서대문독립공원", "sensitiveHistory": true},
+    {"contentId": "1828571", "name": "독립관", "sensitiveHistory": true},
+    {"contentId": "1825057", "name": "3.1독립선언기념탑", "sensitiveHistory": true},
+    {"contentId": "1829735", "name": "순국선열추념탑", "sensitiveHistory": true}
+  ]
+}

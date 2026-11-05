@@ -30,7 +30,7 @@ Swagger: http://localhost:8080/swagger-ui.html · 프론트 명세: `docs/api.md
 | 기능 | 패키지 | 엔드포인트 | AI가 하는 일 |
 |---|---|---|---|
 | F1 처음 설정 | `domain/user` | `POST /api/users`, `GET /api/users/{userId}` | - |
-| F2 지금 추천 | `domain/recommend` | `GET /api/now` | 규칙으로 거른 후보 중 장소 선택 + 추천 이유 |
+| F2 지금 추천 | `domain/recommend` (날씨는 `domain/weather`) | `GET /api/now` | 규칙으로 거른 후보 중 장소 선택 + 추천 이유 |
 | F3 맞춤 장면 | `domain/scene` | `POST /api/scenes` | 모국어 + 쉬운 한국어 이야기(3~4문장), 내 나라 역사와 한 줄 연결 |
 | F4 현장 해설 | `domain/place` | `GET /api/places/nearby`, `POST /api/explanations` | 저장된 해설을 번역만 한다 |
 | 사진 (F4·F6·F7) | `domain/photo` | `POST /api/photos` | - |
@@ -57,10 +57,14 @@ com.hackathon
 │   ├── common/      Nationality, Language — 여러 도메인이 같이 쓰는 코드값
 │   ├── entity/      BaseTimeEntity — createdAt·updatedAt 자동 (서울 시간)
 │   ├── util/        SeoulTime(오늘·지금, Asia/Seoul), GeoUtils(거리 m)
+│   ├── external/    ExternalHttp(외부 GET+JSON, 키 인코딩·XML 오류 처리), ExternalApiException, PublicDataHeader
 │   ├── response/    ApiResult, ApiResponse, SuccessType, ErrorCode, CommonErrorType
 │   └── exception/   DomainException, GlobalExceptionHandler
 └── domain/
     ├── llm/         LlmClient(ChatClient 호출은 여기만), PromptRegistry, 범용 샘플 API(/api/chat 등)
+    ├── place/       Place·Station 엔티티, TourApiClient·StationApiClient, PlaceSyncService·StationSyncService,
+    │                DataSyncScheduler(시작 시·매일 동기화), curation/PlaceCurationRegistry(팀 보강 파일)
+    ├── weather/     WeatherService.resolve(시뮬레이션 날씨) / current() — 10분 캐시, 실패해도 예외 없음
     └── {기능}/      controller · service · repository · entity · dto/{request,response} · exception
 ```
 - 도메인 패키지는 위 구조를 따른다. 다른 도메인의 엔티티를 연관관계로 묶지 말고 id(`Long placeId`, `String userId`)로 참조한다 — 병렬 작업 충돌을 줄인다
@@ -72,22 +76,45 @@ com.hackathon
 - 엔티티는 `BaseTimeEntity`를 상속한다
 - 사용자는 로그인 없는 익명 사용자. `userId`는 서버가 만든 UUID 문자열이고 프론트가 기기에 저장한다
 
-## 장소 데이터 (TourAPI 동기화)
-장소 기본 정보는 CSV·하드코딩 시드가 아니라 **TourAPI를 호출해 DB에 동기화**한다. 관리자 API는 만들지 않는다.
+## 장소·역 데이터 (외부 API 동기화)
+장소와 지하철역은 CSV·하드코딩 시드가 아니라 **외부 API를 호출해 DB에 동기화**한다. 관리자 API는 만들지 않는다.
 
-- **실행 시점**: 서버 시작 시 장소 테이블이 비어 있으면 1회 + `@Scheduled(cron = "${app.tour.sync-cron}", zone = "Asia/Seoul")`로 매일 1회. `app.tour.sync-enabled=false`면 둘 다 건너뛴다 (발표 전에는 끈다)
-- **필드 출처를 나눈다**
-  | 출처 | 필드 | 동기화 때 |
-  |---|---|---|
-  | TourAPI | `contentId`(유니크 키), 이름, 주소, 좌표, 개요, 대표 이미지, `modifiedTime` | 갱신 |
-  | 팀 보강 | 추천 시간대, 실내 여부, 현장 해설 원문, 민감한 역사 여부, 코스 | 덮어쓰지 않는다 |
-- 팀 보강 데이터는 API가 없으므로 `src/main/resources/`의 보강 파일(`contentId` 기준)로 관리하고 동기화 때 합친다
-- **upsert 규칙**: `contentId`로 찾아 있으면 TourAPI 필드만 갱신, 없으면 추가. `modifiedTime`이 바뀐 장소만 상세(개요)를 다시 받는다
-- **새 장소**는 팀 보강이 없으므로 `검수 전` 상태로 두고 추천·후보에서 뺀다. 보강 파일에 들어오면 노출한다
+### 이미 있는 것 (연동 틀)
+- 외부 호출은 `ExternalHttp.getJson()`으로 한다. 쿼리 값을 직접 인코딩하고(Decoding 키의 `+`·`/` 보호), 키가 든 URL·원본 예외는 로그·예외에 남기지 않는다
+- TourAPI(서대문구 161건 중 관광지·문화시설·쇼핑 115건 수집)·기상청·T Data(역 784건) 모두 2026-11 실제 키로 응답 형식을 확인했다
+- 장소를 쓰는 기능은 `PlaceRepository.findAllByStatus(ACTIVE)`만 후보로 쓴다. 조회용 서비스 메서드(`PlaceService`)는 기능을 만들 때 `domain/place/service`에 추가한다
+
+### 장소: TourAPI
+- **실행 시점**: 서버를 켤 때마다 1회 + `@Scheduled(cron = "${app.tour.sync-cron}", zone = "Asia/Seoul")`로 매일 1회. 목록 호출 3번 + 바뀐 개요만이라 가볍다. `app.tour.sync-enabled=false`면 건너뛴다 (발표 전에는 꺼서 데이터를 고정한다)
+- **받는 타입** `app.tour.content-type-ids` = 관광지(12)·문화시설(14)·쇼핑(38). **바로 노출하는 타입** `app.tour.auto-active-type-ids` = 관광지·문화시설. 서대문형무소역사관·임시정부기념관은 문화시설로 분류돼 있다
+- **노출 규칙** (`Place.applyRules`, 동기화 때마다 다시 계산)
+  | 조건 | 상태 |
+  |---|---|
+  | 보강 파일 `excluded`에 있음 | `EXCLUDED` (공연장·영화관·어린이공원 등) |
+  | 보강 파일 `places`에 있음, 또는 자동 노출 타입 | `ACTIVE` |
+  | 그 외 (쇼핑 매장 등) | `PENDING_REVIEW` |
+  | 이번 목록에 없음 | `INACTIVE` |
+- **필드 출처**
+  | 출처 | 필드 |
+  |---|---|
+  | TourAPI | `contentId`(유니크 키), 이름, 주소, 좌표, 개요, 대표 이미지, `modifiedTime` |
+  | 보강 파일 (없으면 기본값) | 추천 시간대(문화시설 `MORNING,AFTERNOON` / 그 외 `MORNING,AFTERNOON,EVENING`), 실내 여부(문화시설이면 true), 민감한 역사 여부(false), 현장 해설(없으면 개요로 대신) |
+- **보강 파일** `src/main/resources/data/place-curation.json`: `{ excluded: [contentId…], excludedNames: [참고용 이름…], places: [{contentId, name, timeSlots?, indoor?, sensitiveHistory?, explanation?}] }`. 필요한 값만 적는다. 형식은 `PlaceCuration` 주석 참고. **고친 뒤 서버를 다시 켜면 반영된다**
+- **현장 해설 원문은 `Place.fieldExplanation()`을 쓴다**: 보강 파일 `explanation`이 있으면 그것, 없으면 TourAPI 개요(한국관광공사 공식 데이터). AI는 이 값을 번역만 한다. 둘 다 없으면 해설 후보에서 뺀다
+  - `explanation`은 개요를 고치고 싶을 때만 쓴다. 특히 `sensitiveHistory` 장소는 개요 어조가 아래 "민감한 역사" 원칙과 맞는지 확인하고, 맞지 않으면 사실은 유지한 채 `explanation`을 쓴다 (서대문형무소역사관은 개요에 "일제 탄압기관", "모진 고문" 같은 표현이 있어 `explanation`을 따로 넣었다)
+- 개요는 `ACTIVE` 장소 중 개요가 없거나 `modifiedTime`이 바뀐 것만 다시 받는다
 - **TourAPI에서 사라진 장소**는 지우지 않고 비활성으로 바꾼다 (방문 기록·한걸음이 placeId로 참조한다)
 - **실패해도 서버는 계속 돈다**: 호출 실패·키 없음이면 로그만 남기고 기존 DB 데이터를 유지한다
 - 테스트·목 모드에서는 외부 호출 없이 동작해야 한다 (키가 비어 있으면 건너뛰므로 테스트는 고정 데이터를 직접 넣는다)
-- 지하철역 좌표는 7개 남짓이라 동기화 대상이 아니다. 보강 파일에 함께 둔다
+- 지역 필터는 법정동 코드(`lDongRegnCd=11`, `lDongSignguCd=410`)로 한다. 예전 `areaCode`는 쓰지 않는다
+
+### 지하철역: T Data 지하철역 좌표정보
+- 엔드포인트 `app.station.base-url`(https) + `apikey`(필수), `startRow`·`rowCnt`. 응답은 JSON 배열 `[{outStnNum, stnKrNm, lineNm, convX, convY}]`이고 `convX` = 경도, `convY` = 위도 (문자열)
+- 전체 784건(2026-11 기준)이 `rowCnt=1000` 한 번에 온다
+- **실행 시점**: 서버 시작 시 역 테이블이 비어 있으면 1회 + 장소 동기화 스케줄 때 함께 1회 (원천 갱신은 분기 1회). `app.station.sync-enabled=false`면 건너뛴다
+- 서울 전체 역을 저장하고 **`outStnNum`(역 외부코드, 행마다 유일)**으로 upsert한다. 환승역은 호선마다 한 행이고, 같은 이름이라도 위치가 다를 수 있다 (예: 신촌 2호선 ≠ 신촌 경의중앙선)
+- 가까운 역 계산은 저장된 전체 역에서 `GeoUtils`로 한다. "역 선택" 목록은 기준 역에서 `app.station.selectable-radius-meters`(기본 3km) 안의 역만 보여준다
+- 장소와 같이 실패해도 기존 데이터를 유지하고, 키가 없거나 테스트·목 모드면 외부 호출 없이 동작한다
 
 ## 응답·예외 컨벤션
 - 모든 JSON 응답은 `ApiResult { resultType, httpStatusCode, code(실패 시), message, data }`
@@ -102,7 +129,10 @@ com.hackathon
 ## 서비스 원칙 (기획에서 온 규칙 — 코드·프롬프트 모두)
 - **개인정보**: 위치(lat/lng)는 요청 처리에만 쓰고 저장·로그하지 않는다. 지도·한걸음에는 장소 단위 집계와 날짜까지만 보여주고 개인의 위치·방문 시각은 내보내지 않는다
 - **AI 정확성**: DB에 있는 장소·정보만 근거로 쓴다. 추천은 규칙으로 거른 후보 안에서만 고르고, 후보 밖 id가 오면 버린다. 현장 해설은 저장된 원문을 **번역만** 한다
-- **민감한 역사**: 식민지 역사가 얽힌 장소(서대문형무소 등)는 누군가를 탓하지 않고 "기억과 평화의 공간"으로 담담하게 전한다. 이 원칙은 해당 프롬프트 system에 고정한다
+- **민감한 역사** (식민지 역사가 얽힌 장소, `Place.sensitiveHistory`): **사실은 그대로, 표현은 담담하게** 전한다. 이 원칙은 해당 프롬프트 system에 고정한다
+  - 사실(누가, 언제, 무엇을)은 숨기거나 흐리지 않는다. 예: "1908년 일제가 세운 감옥", "독립운동가들이 갇히고 고문을 받았다"
+  - 감정을 싣는 수식어("만행", "탄압기관", "모진", "원흉" 등)와 특정 국가·국민 전체를 겨냥하는 표현은 쓰지 않는다. 일본·중국 유학생도 같은 글을 자기 언어로 읽는다
+  - "기억과 평화의 공간"으로 끝맺는다. 다른 나라 역사와 연결할 때(F3 한 줄 연결)도 같은 기준이다
 - **시연 안정성**: 모든 AI 기능은 목 응답이 있어야 한다. 위치·날씨·시간은 요청 파라미터로 시뮬레이션할 수 있게 한다 (발표장은 실내). 번역·장면은 장소·언어별로 캐싱한다
 - **응답 시간**: 추천·장면은 몇 초 안. 엽서처럼 오래 걸리는 생성은 비동기 + 상태 조회
 - **샘플 데이터**: 지도가 비어 보이지 않게 장소별 한걸음 3~5개, 국적이 섞인 방문 기록을 샘플로 넣는다 (사용자 데이터라 TourAPI와 별개). 샘플임을 구분할 수 있게 한다
@@ -123,11 +153,13 @@ com.hackathon
 | `app.storage.dir` | 사진·엽서 저장 디렉터리 (기본 `./uploads`) | 기본값 |
 | `app.weather.kma-service-key` | 기상청 초단기실황 (공공데이터포털 Decoding 키) | 날씨 시뮬레이션/기본값 |
 | `app.tour.service-key` | TourAPI 국문 관광정보 (공공데이터포털 Decoding 키) | 동기화 건너뜀, DB 데이터 유지 |
+| `app.station.api-key` | T Data 지하철역 좌표정보 인증키 | 동기화 건너뜀, DB 데이터 유지 |
+| `app.station.sync-enabled` / `selectable-radius-meters` | 역 동기화 켜기 / 역 선택 목록 범위 (기본 `true` / `3000`) | - |
 | `app.tour.sync-enabled` / `sync-cron` | 장소 동기화 켜기 / 주기 (기본 `true` / 매일 04:00) | - |
-| `app.tour.area-code` / `sigungu-code` | 서울 / 서대문구 (기본 `1` / `14`, TourAPI 문서로 확인) | - |
-| `app.demo.default-station` | 위치·역이 없을 때 기준 역 (기본 `dongnimmun`) | 기본값 |
+| `app.tour.l-dong-regn-cd` / `l-dong-signgu-cd` | 법정동 코드 서울 / 서대문구 (기본 `11` / `410`). 예전 `areaCode`는 쓰지 않는다 | - |
+| `app.demo.default-station` | 위치·역이 없을 때 기준 역 (기본 `독립문`, T Data 역 한글명) | 기본값 |
 
-키는 `application.yml`(gitignore) 또는 환경변수(`APP_WEATHER_KMA_SERVICE_KEY`, `APP_TOUR_SERVICE_KEY`)로 넣는다. AI 키는 `spring.ai.anthropic.api-key`(`ANTHROPIC_API_KEY`), `spring.ai.openai.api-key`(`OPENAI_API_KEY`).
+키는 `application.yml`(gitignore) 또는 환경변수(`APP_WEATHER_KMA_SERVICE_KEY`, `APP_TOUR_SERVICE_KEY`, `APP_STATION_API_KEY`)로 넣는다. AI 키는 `spring.ai.anthropic.api-key`(`ANTHROPIC_API_KEY`), `spring.ai.openai.api-key`(`OPENAI_API_KEY`).
 
 ## 속도 규칙
 - 계획 승인 루프 없이 바로 구현한다
@@ -138,7 +170,7 @@ com.hackathon
 
 ## 절대 규칙
 1. API 키·`.env`·`src/main/resources/application.yml`을 커밋하지 않는다. `application.yml`은 gitignore 대상이고 팀원끼리 직접 공유한다 (키 패턴은 pre-commit이 차단)
-2. `application.yml`의 API 키 값은 읽지 않는다 (`spring.ai.anthropic.api-key`, `spring.ai.openai.api-key`, `app.weather.kma-service-key`, `app.tour.service-key` 등)
+2. `application.yml`의 API 키 값은 읽지 않는다 (`spring.ai.anthropic.api-key`, `spring.ai.openai.api-key`, `app.weather.kma-service-key`, `app.tour.service-key`, `app.station.api-key` 등)
    - 파일 전체를 `cat`·Read로 열지 않는다. 설정을 확인하거나 고칠 땐 필요한 구간만 보고, 키가 있는 줄은 빼고 본다 (예: `grep -v -i 'key' application.yml`)
    - 키 값을 응답·로그·커밋 메시지·문서·테스트에 옮겨 적지 않는다. `.env`와 `ANTHROPIC_API_KEY`·`OPENAI_API_KEY` 같은 환경변수 값도 출력하지 않는다 (`env`, `printenv`, `echo $..._KEY` 금지)
    - 키가 필요한 동작은 목 모드(`LLM_MOCK=true`)로 확인한다. 실제 키 확인이 필요하면 사람에게 요청한다
