@@ -30,7 +30,7 @@ Swagger: http://localhost:8080/swagger-ui.html · 프론트 명세: `docs/api.md
 | 기능 | 패키지 | 엔드포인트 | AI가 하는 일 |
 |---|---|---|---|
 | F1 처음 설정 | `domain/user` | `POST /api/users`, `GET /api/users/{userId}` | - |
-| F2 지금 추천 | `domain/recommend` | `GET /api/now` | 규칙으로 거른 후보 중 장소 선택 + 추천 이유 |
+| F2 지금 추천 | `domain/recommend` (날씨는 `domain/weather`) | `GET /api/now` | 규칙으로 거른 후보 중 장소 선택 + 추천 이유 |
 | F3 맞춤 장면 | `domain/scene` | `POST /api/scenes` | 모국어 + 쉬운 한국어 이야기(3~4문장), 내 나라 역사와 한 줄 연결 |
 | F4 현장 해설 | `domain/place` | `GET /api/places/nearby`, `POST /api/explanations` | 저장된 해설을 번역만 한다 |
 | 사진 (F4·F6·F7) | `domain/photo` | `POST /api/photos` | - |
@@ -57,10 +57,14 @@ com.hackathon
 │   ├── common/      Nationality, Language — 여러 도메인이 같이 쓰는 코드값
 │   ├── entity/      BaseTimeEntity — createdAt·updatedAt 자동 (서울 시간)
 │   ├── util/        SeoulTime(오늘·지금, Asia/Seoul), GeoUtils(거리 m)
+│   ├── external/    ExternalHttp(외부 GET+JSON, 키 인코딩·XML 오류 처리), ExternalApiException, PublicDataHeader
 │   ├── response/    ApiResult, ApiResponse, SuccessType, ErrorCode, CommonErrorType
 │   └── exception/   DomainException, GlobalExceptionHandler
 └── domain/
     ├── llm/         LlmClient(ChatClient 호출은 여기만), PromptRegistry, 범용 샘플 API(/api/chat 등)
+    ├── place/       Place·Station 엔티티, TourApiClient·StationApiClient, PlaceSyncService·StationSyncService,
+    │                DataSyncScheduler(시작 시·매일 동기화), curation/PlaceCurationRegistry(팀 보강 파일)
+    ├── weather/     WeatherService.resolve(시뮬레이션 날씨) / current() — 10분 캐시, 실패해도 예외 없음
     └── {기능}/      controller · service · repository · entity · dto/{request,response} · exception
 ```
 - 도메인 패키지는 위 구조를 따른다. 다른 도메인의 엔티티를 연관관계로 묶지 말고 id(`Long placeId`, `String userId`)로 참조한다 — 병렬 작업 충돌을 줄인다
@@ -75,6 +79,11 @@ com.hackathon
 ## 장소·역 데이터 (외부 API 동기화)
 장소와 지하철역은 CSV·하드코딩 시드가 아니라 **외부 API를 호출해 DB에 동기화**한다. 관리자 API는 만들지 않는다.
 
+### 이미 있는 것 (연동 틀)
+- 외부 호출은 `ExternalHttp.getJson()`으로 한다. 쿼리 값을 직접 인코딩하고(Decoding 키의 `+`·`/` 보호), 키가 든 URL·원본 예외는 로그·예외에 남기지 않는다
+- 지하철역 동기화는 실제 키로 확인했다 (784건). TourAPI·기상청 클라이언트는 문서 형식대로 짜 두었고 `TODO(키 발급 후)` 표시가 있다. 키를 받으면 실제 응답으로 필드명·성공 코드·서대문구 코드를 확인한다
+- 장소를 쓰는 기능은 `PlaceRepository.findAllByStatus(ACTIVE)`만 후보로 쓴다. 조회용 서비스 메서드(`PlaceService`)는 기능을 만들 때 `domain/place/service`에 추가한다
+
 ### 장소: TourAPI
 
 - **실행 시점**: 서버 시작 시 장소 테이블이 비어 있으면 1회 + `@Scheduled(cron = "${app.tour.sync-cron}", zone = "Asia/Seoul")`로 매일 1회. `app.tour.sync-enabled=false`면 둘 다 건너뛴다 (발표 전에는 끈다)
@@ -83,7 +92,7 @@ com.hackathon
   |---|---|---|
   | TourAPI | `contentId`(유니크 키), 이름, 주소, 좌표, 개요, 대표 이미지, `modifiedTime` | 갱신 |
   | 팀 보강 | 추천 시간대, 실내 여부, 현장 해설 원문, 민감한 역사 여부, 코스 | 덮어쓰지 않는다 |
-- 팀 보강 데이터는 API가 없으므로 `src/main/resources/`의 보강 파일(`contentId` 기준)로 관리하고 동기화 때 합친다
+- 팀 보강 데이터는 API가 없으므로 `src/main/resources/data/place-curation.json`(`contentId` 기준 배열)으로 관리하고 동기화 때 합친다. 형식은 `PlaceCuration` 주석 참고. 보강을 고친 뒤에는 다음 동기화(또는 장소 테이블을 비우고 재시작) 때 반영된다
 - **upsert 규칙**: `contentId`로 찾아 있으면 TourAPI 필드만 갱신, 없으면 추가. `modifiedTime`이 바뀐 장소만 상세(개요)를 다시 받는다
 - **새 장소**는 팀 보강이 없으므로 `검수 전` 상태로 두고 추천·후보에서 뺀다. 보강 파일에 들어오면 노출한다
 - **TourAPI에서 사라진 장소**는 지우지 않고 비활성으로 바꾼다 (방문 기록·한걸음이 placeId로 참조한다)

@@ -1,6 +1,7 @@
 package com.hackathon.global.config;
 
 import java.time.Duration;
+import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -48,6 +49,8 @@ public record AppProperties(
             @DefaultValue("11") String lDongRegnCd,
             // 법정동 시군구 코드: 서대문구 (법정동코드 11410의 뒤 3자리)
             @DefaultValue("410") String lDongSignguCd,
+            // 받을 관광 타입: 12 관광지, 14 문화시설, 38 쇼핑(전통시장). 음식점(39)·숙박(32)은 받지 않는다
+            @DefaultValue({"12", "14", "38"}) List<String> contentTypeIds,
             // 발표 전에는 false로 꺼서 리허설한 데이터가 바뀌지 않게 한다
             @DefaultValue("true") boolean syncEnabled,
             // 매일 새벽 4시 (서울 시간)
