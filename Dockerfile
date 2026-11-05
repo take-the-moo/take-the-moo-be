@@ -18,10 +18,3 @@ WORKDIR /app
 COPY --from=build /workspace/build/libs/*-SNAPSHOT.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
-
-# Coolify 배포 (compose.coolify.yml이 target: deploy로 고른다). 설정 값은 시작할 때 환경변수에서 읽는다
-FROM runtime AS deploy
-COPY deploy/application.yml /app/config/application.yml
-
-# 기본 결과물: 로컬 compose.yml용. application.yml은 빌드 때 jar에 들어간다
-FROM runtime
