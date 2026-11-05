@@ -33,10 +33,11 @@ docker compose down
 
 ### AWS 배포
 
-EC2 한 대에서 `compose.yml`에 Caddy(HTTPS, `compose.prod.yml`)를 얹어 띄운다. 지금 서버는 **`https://3-36-178-51.sslip.io`**. 자세한 건 [docs/deploy.md](docs/deploy.md).
+EC2 한 대에서 `compose.yml`에 Caddy(HTTPS)와 프론트(`compose.prod.yml`)를 얹어 띄운다. 지금 서버는 **`https://3-36-178-51.sslip.io`** (앱 화면 + `/api`). 자세한 건 [docs/deploy.md](docs/deploy.md).
 
 ```bash
-scripts/deploy-ec2.sh ubuntu@3.36.178.51 -i ~/.ssh/take-the-moo-key.pem   # 배포·재배포
+scripts/deploy-ec2.sh ubuntu@3.36.178.51 -i ~/.ssh/take-the-moo-key.pem                                   # 백엔드 배포·재배포
+FE_DIR=../take-the-moo-fe/storywalk-fe scripts/deploy-ec2.sh ubuntu@3.36.178.51 -i ~/.ssh/take-the-moo-key.pem   # 프론트도 같이
 ```
 
 ### 목 모드
