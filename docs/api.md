@@ -249,6 +249,79 @@ F1 처음 설정. 국적·언어로 익명 사용자를 만든다. 응답의 `us
 
 ---
 
+### GET /api/now
+
+F2 지금 추천. 앱을 열자마자 질문 없이 부른다. 지금 시간·날씨·위치에 맞는 장소 1곳과 그 이유를 준다. 이유는 사용자 나라의 비슷한 사례로 잇는 한 문장이고, 자세한 연결은 `POST /api/scenes`가 맡는다.
+
+쿼리 (모두 선택. 발표장이 실내라 위치·날씨·시간을 지정할 수 있다)
+
+| 이름 | 설명 |
+|---|---|
+| userId | 사용자. 이 사용자의 언어·국적으로 이유를 쓴다. 없으면 국적 `OTHER`, 언어 `EN` |
+| lat, lng | 현재 위치 (위도·경도). 둘을 함께 보낸다 |
+| stationId | `GET /api/stations`에서 고른 역. `lat`·`lng`가 있으면 무시한다 |
+| weather | 날씨 시뮬레이션 `CLEAR, RAINY, SNOWY`. 없으면 기상청 실제 날씨 |
+| time | 시각 시뮬레이션 `HH:mm` (서울, 예: `15:00`). 없으면 지금 |
+
+기준 위치 = `lat`·`lng` → 없으면 `stationId` → 둘 다 없으면 기본 역(독립문).
+
+```bash
+curl 'localhost:8080/api/now?userId=3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c&stationId=12&weather=RAINY&time=15:00'
+```
+
+응답 200
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": {
+    "place": {
+      "placeId": 34,
+      "name": "서대문형무소역사관",
+      "imageUrl": "https://tong.visitkorea.or.kr/cms/resource/example/prison.jpg",
+      "distanceMeters": 197,
+      "walkMinutes": 3,
+      "indoor": true
+    },
+    "reason": "Nơi này giống nhà tù Hỏa Lò ở Hà Nội.",
+    "reasonKo": "베트남의 호아로 수용소와 비슷한 곳이에요.",
+    "context": {
+      "time": "15:00",
+      "timeSlot": "AFTERNOON",
+      "weather": "RAINY",
+      "temperature": null,
+      "weatherSource": "SIMULATED",
+      "baseStation": "독립문"
+    },
+    "alternatives": [
+      { "placeId": 4, "name": "독립문", "distanceMeters": 287 }
+    ],
+    "weeklyPopular": [
+      { "placeId": 4, "name": "독립문", "visitorCount": 12 },
+      { "placeId": 51, "name": "독립문영천시장", "visitorCount": 9 }
+    ]
+  }
+}
+```
+
+- 추천 방법: 서버가 규칙으로 후보를 거른 뒤(노출 중·해설 있음 → 지금 시간대 → 비·눈이면 실내 → 가까운 순 6곳) AI가 그중 1곳을 고른다. 거리 제한은 없다
+  - 밤(21–06시)처럼 맞는 시간대가 없으면 `context.timeSlot`이 `null`이고 시간대 조건 없이 고른다. 실내 후보가 하나도 없으면 실내 조건도 뺀다
+- `reason`은 사용자 언어, `reasonKo`는 쉬운 한국어 한 문장이다
+- `walkMinutes`는 서버가 계산한다 (직선거리 ÷ 분당 67m, 올림)
+- `alternatives`는 추천에서 빠진 다른 후보 최대 3곳 (가까운 순)
+- `weeklyPopular`는 지난주 인기 장소다. 오늘을 포함한 최근 7일(서울 날짜) 동안 방문 도장을 찍은 사람이 많은 순으로 최대 3곳. 위치·추천과 무관하게 모두에게 같다
+  - `visitorCount`는 사람 수다 (한 사람이 여러 날 와도 1명). 노출하지 않는 장소는 빠지고, 방문 기록이 없으면 빈 배열이다
+- `context.temperature`는 기상청 날씨일 때만 온다. `weather`를 지정했거나 기본값이면 `null`
+- AI가 후보 밖 장소를 고르거나 응답에 실패하면 가장 가까운 후보와 기본 문구("지금 가까이에서 가 볼 만한 곳이에요.")를 준다. 그래서 AI 오류로 실패하지 않는다
+- 추천 결과와 위치는 저장하지 않는다. 실제 AI 호출은 몇 초(약 4초) 걸린다
+- 목 모드에서는 가장 가까운 후보와 `[MOCK EN] …` 형태의 이유가 온다
+
+오류: 404 `USER_NOT_FOUND`(없는 userId), 404 `RECOMMEND_NOT_FOUND`(노출 중인 장소가 하나도 없음), 422 `STATION_INVALID_LOCATION`, 404 `STATION_NOT_FOUND`, 400 `COMMON_INVALID_REQUEST`(없는 날씨 값, `HH:mm`이 아닌 시각, 숫자가 아닌 좌표)
+
+---
+
 ### GET /api/stations
 
 F2 역 선택 목록. 위치 권한을 거부했거나 데모에서 기준 역을 고를 때 보여 준다. 고른 역의 `stationId`를 `GET /api/now`·`GET /api/places/nearby`에 보낸다.
@@ -758,6 +831,7 @@ F5 방문 도장. 장소 근처(기본 200m)에 있으면 도장을 찍고, 이�
 | 404 | `USER_NOT_FOUND` | 없는 userId |
 | 404 | `PLACE_NOT_FOUND` | 없거나 노출하지 않는 장소 |
 | 404 | `STATION_NOT_FOUND` | 없는 stationId |
+| 404 | `RECOMMEND_NOT_FOUND` | 지금 추천할 장소가 없음 (노출 중이고 해설이 있는 장소가 하나도 없다) |
 | 403 | `PHOTO_FORBIDDEN` | 다른 사용자의 사진을 한걸음·엽서에 쓰려 함 |
 | 404 | `PHOTO_NOT_FOUND` | 없는 photoId |
 | 404 | `POSTCARD_NOT_FOUND` | 없는 postcardId |
