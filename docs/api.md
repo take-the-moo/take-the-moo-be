@@ -30,6 +30,8 @@
 
 ## 엔드포인트 요약
 
+### 범용 샘플 API
+
 | 메서드 | 경로 | 설명 | 응답 data |
 |---|---|---|---|
 | POST | `/api/chat` | 텍스트 채팅 | ChatResponse |
@@ -37,6 +39,29 @@
 | POST | `/api/analyze` | 구조화 분석 | AnalysisResult |
 | POST | `/api/image` | 이미지 질문 (multipart) | ChatResponse |
 | GET | `/api/health` | 서버 상태 | `{status, mock}` |
+
+### 서비스 API (작업 중)
+
+아래는 기획 P0 목록이다. 엔드포인트를 구현할 때 요청/응답 섹션을 이 문서에 추가한다. 섹션이 없는 엔드포인트는 아직 형식이 정해지지 않은 것이다.
+
+| 기능 | 메서드 | 경로 | 설명 |
+|---|---|---|---|
+| F1 | POST | `/api/users` | 국적·언어로 익명 사용자 생성 → `userId` (기기에 저장) |
+| F1 | GET | `/api/users/{userId}` | 사용자 조회 |
+| F2 | GET | `/api/now` | 시간·날씨·위치 추천 + 지난주 인기 (시뮬레이션 파라미터) |
+| F3 | POST | `/api/scenes` | 맞춤 장면 생성 (국적 바꿔 재생성 가능) |
+| F4 | GET | `/api/places/nearby` | 주변 장소 후보 |
+| F4 | POST | `/api/explanations` | 선택한 장소 해설 (사용자 언어로 번역) |
+| F4·F6·F7 | POST | `/api/photos` | 사진 업로드 |
+| F5 | POST | `/api/visits` | 방문 도장 |
+| F5 | GET | `/api/users/{userId}/visits` | 날짜별 방문 기록, 코스 진행도 |
+| F6 | GET | `/api/map/pins` | 장소별 방문 수·국적 분포 |
+| F6 | GET | `/api/places/{placeId}/reviews` | 한걸음 목록 (보는 사람 언어로 번역) |
+| F6 | POST | `/api/places/{placeId}/reviews` | 한걸음 작성 (부적절하면 422 `REVIEW_INAPPROPRIATE`) |
+| F7 | POST | `/api/postcards` | 엽서 생성 시작 (비동기) |
+| F7 | GET | `/api/postcards/{postcardId}` | 생성 상태·결과·다운로드 URL |
+
+공통 코드값 — 국적 `nationality`: `VN, CN, JP, MN, UZ, US, OTHER` / 언어 `language`: `KO, EN, VI, ZH, JA, MN, UZ`. 대문자 상수 그대로 주고받는다.
 
 `promptKey`는 서버 `prompts.yml`에 등록된 키다. 지금 등록된 키: `chat`, `analyze`, `image`.
 `params`는 시스템 프롬프트의 `{변수}`를 채운다 (예: `chat`은 `target`, `analyze`는 `domain`).

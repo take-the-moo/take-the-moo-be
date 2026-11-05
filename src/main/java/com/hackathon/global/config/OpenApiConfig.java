@@ -40,7 +40,7 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI().info(new Info()
-                .title("Hackathon LLM API")
+                .title("서대문 발자취 API")
                 .version("v1")
                 .description("모든 JSON 응답은 ApiResult { resultType, httpStatusCode, code(실패 시), message, data }로 감싼다."));
     }

@@ -6,6 +6,15 @@
 #   max-tokens:  응답 최대 토큰
 #   system:      시스템 프롬프트. {변수}는 요청의 params 값으로 치환된다
 #   defaults:    params에 값이 없을 때 쓰는 변수 기본값 (선택)
+#
+# 서비스 프롬프트 공통 원칙 (각 system에 필요한 만큼 넣는다):
+#   - 입력으로 받은 장소·해설 데이터만 근거로 쓴다. 없는 사실을 지어내지 않는다
+#   - 식민지 역사가 얽힌 장소는 누군가를 탓하지 않고 "기억과 평화의 공간"으로 담담하게 전한다
+#   - 언어는 {language}(Language.koreanName), 국적은 {nationality}(Nationality.koreanName) 변수로 받는다
+#
+# 예정 promptKey (기능 구현 때 추가): recommend(F2) · scene(F3) · translate(F4·F6) · moderate(F6)
+# 엽서 이미지(F7)는 OpenAI라 형식이 다르다 — 이미지 프롬프트도 이 파일에 둔다 (Java 코드 금지)
+# chat / analyze / image는 범용 샘플이다. 필요 없어지면 지워도 된다
 llm:
   prompts:
     chat:
