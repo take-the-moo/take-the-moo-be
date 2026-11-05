@@ -60,6 +60,25 @@ class AuthEnforcementTest {
     }
 
     @Test
+    void 나의_발자취는_본인_토큰이_있어야_본다() throws Exception {
+        String me = TestUsers.create(userService, Nationality.VN, Language.VI);
+        String other = TestUsers.create(userService, Nationality.JP, Language.JA);
+
+        for (String path : new String[]{"/api/users/{userId}/journey", "/api/users/{userId}/journey/story"}) {
+            mvc.perform(get(path, me))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("USER_LOGIN_REQUIRED"));
+            mvc.perform(get(path, me).header("Authorization", "Bearer 잘못된-토큰"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("USER_INVALID_TOKEN"));
+            mvc.perform(as(get(path, me), other))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("USER_FORBIDDEN"));
+            mvc.perform(as(get(path, me), me)).andExpect(status().isOk());
+        }
+    }
+
+    @Test
     void 나의_기록은_본인_토큰이_있어야_본다() throws Exception {
         String me = TestUsers.create(userService, Nationality.VN, Language.VI);
         String other = TestUsers.create(userService, Nationality.JP, Language.JA);

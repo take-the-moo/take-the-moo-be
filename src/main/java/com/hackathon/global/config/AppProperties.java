@@ -97,7 +97,14 @@ public record AppProperties(
     ) {
     }
 
-    /** 위치·역을 못 받았을 때 기준이 되는 역 */
-    public record Demo(@DefaultValue("독립문") String defaultStation) {
+    /**
+     * 시연용 설정.
+     * - defaultStation: 위치·역을 못 받았을 때 기준이 되는 역
+     * - password: 시연 계정의 비밀번호 (환경변수 APP_DEMO_PASSWORD). 비어 있으면 시연 계정을 만들지 않는다
+     */
+    public record Demo(
+            @DefaultValue("독립문") String defaultStation,
+            @DefaultValue("") String password
+    ) {
     }
 }

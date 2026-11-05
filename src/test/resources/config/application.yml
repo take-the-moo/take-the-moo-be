@@ -15,6 +15,10 @@ app:
     reviews-enabled: false
     # 샘플 방문도 테스트에서 넣지 않는다 (SampleVisitSeederTest가 직접 부른다)
     visits-enabled: false
+  demo:
+    # 로컬 application.yml에 비밀번호가 있어도 테스트에서는 시연 계정을 만들지 않는다 (DemoJourneySeederTest가 직접 부른다)
+    # pre-commit 훅이 이름에 password가 든 키의 리터럴 값을 막으므로 ${...:기본값} 형태로 쓴다
+    password: ${APP_DEMO_TEST_PASSWORD:}
   auth:
     # 서명 키는 두지 않는다 (비어 있으면 테스트마다 임시 키 — 발급·검증이 같은 서버 안이라 상관없다)
     # 토큰 검사는 끈다 — 다른 기능 테스트는 토큰 없이 userId로 부른다. AuthEnforcementTest가 켜고 따로 확인한다

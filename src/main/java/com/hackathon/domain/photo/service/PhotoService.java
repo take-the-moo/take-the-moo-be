@@ -11,6 +11,7 @@ import com.hackathon.global.storage.FileStorage;
 import com.hackathon.global.storage.StorageErrorType;
 import com.hackathon.global.storage.StorageException;
 import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,6 +75,13 @@ public class PhotoService {
     /** 사진 정보 (소유자 확인 없이). 없으면 404 PHOTO_NOT_FOUND */
     public PhotoInfo getPhoto(String photoId) {
         return PhotoInfo.from(find(photoId));
+    }
+
+    /** 사용자의 사진. 오래된 순 (F8 나의 발자취). 권한은 부르는 쪽에서 UserService.getUser로 확인한다 */
+    public List<PhotoInfo> getUserPhotos(String userId) {
+        return photoRepository.findAllByUserIdOrderByCreatedAtAscIdAsc(userId).stream()
+                .map(PhotoInfo::from)
+                .toList();
     }
 
     /** 사진 파일. 없으면 404 PHOTO_NOT_FOUND, DB에는 있는데 파일이 없으면 404 STORAGE_NOT_FOUND */

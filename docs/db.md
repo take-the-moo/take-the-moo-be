@@ -21,6 +21,7 @@
 | `explanation_translation` | `ExplanationTranslation` | `domain/place` | F4 | 구현됨 |
 | `scene` | `Scene` | `domain/scene` | F3 | 구현됨 |
 | `postcard` | `Postcard` | `domain/postcard` | F7 | 구현됨 |
+| `journey_story` | `JourneyStory` | `domain/journey` | F8 | 구현됨 |
 
 점선은 ID로만 참조하는 관계다. 외래 키는 만들지 않는다. `station`은 다른 테이블과 연결되지 않는다.
 
@@ -30,6 +31,7 @@ erDiagram
   app_user ||..o{ visit : "user_id"
   app_user ||..o{ review : "user_id"
   app_user ||..o{ postcard : "user_id"
+  app_user ||..o{ journey_story : "user_id"
   place ||..o{ place_time_slot : "place_id"
   place ||..o{ photo : "place_id"
   place ||..o{ visit : "place_id"
@@ -176,7 +178,7 @@ docker compose down -v
 | `language` | ENUM | N | 실제 작성 언어 |
 | `photo_id` | VARCHAR(36) | Y | 첨부 사진. 작성자 본인의 사진만 (`PhotoService.getOwnedPhoto`) |
 
-- 인덱스: (`place_id`, `created_at`)
+- 인덱스: (`place_id`, `created_at`), (`user_id`, `created_at`)
 - **`language`에 사용자 설정을 복사하지 않는다.** 요청으로 받거나 감지한 실제 작성 언어를 넣는다.
 - 필터에 걸린 후기는 저장하지 않으므로 상태 컬럼이 없다.
 - 작성자 국적은 표시할 때 `UserService`로 조회한다.
@@ -237,6 +239,23 @@ docker compose down -v
 - 목 모드·제목 AI 실패면 기본 제목(언어별 날짜 · 한국어 장소)으로 `COMPLETED`까지 만든다. `FAILED`는 사진 파일이 없거나 사진을 읽지 못해 엽서를 아예 만들 수 없을 때만 쓴다.
 - 제목 문구는 이미지에 바로 쓰므로 저장하지 않는다.
 
+### `journey_story` 나의 발자취 이야기 캐시
+사용자의 기록으로 만든 회고 글이다. 기간, 숫자, 카드는 `visit`과 `review`에서 계산하므로 저장하지 않는다.
+
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `id` | BIGINT PK | N | |
+| `user_id` | VARCHAR(36) | N | |
+| `language` | ENUM | N | 모국어 글의 언어 |
+| `story_native` | LONGTEXT | N | |
+| `story_easy_korean` | LONGTEXT | N | |
+| `source_hash` | VARCHAR(64) | N | 생성 입력(모델 + 완성된 프롬프트 + 기록 + 목 모드 표시)의 SHA-256. 기록이나 프롬프트가 바뀌면 다시 생성 |
+
+- 유니크: (`user_id`, `language`). 언어를 바꾸면 그 언어의 글을 따로 만든다.
+- `language`는 글을 쓴 언어이고 `app_user.language`의 복사본이 아니다. 국적은 해시에만 넣고 저장하지 않는다.
+- `source_hash`는 지금 기록이 아니라 글을 만들 때 쓴 입력의 값이라 다른 테이블에서 계산할 수 없다.
+- 도장과 한걸음이 없으면 만들지 않는다. AI 호출이 실패하면 이전 글을 그대로 둔다.
+
 ## 도메인 간에 쓰는 서비스
 
 다른 도메인의 테이블이 필요하면 아래 메서드를 쓴다. 없으면 제공하는 도메인에 필요한 만큼만 추가한다. 이름은 구현하면서 바꿀 수 있지만, 역할은 유지하고 바뀌면 이 표를 고친다.
@@ -250,6 +269,9 @@ docker compose down -v
 | `domain/photo` | `PhotoService.getOwnedPhoto(userId, photoId)` → 소유자 확인 + `PhotoInfo`(403 `PHOTO_FORBIDDEN`), `getPhoto(photoId)`, `getFile(photoId)` → 파일 | F4, F6, F7 |
 | `domain/review` | `ReviewService`의 장소별 한걸음 조회 | F3 |
 | `domain/review` | `ReviewService.countByPlace()` → 장소별 한걸음 수 | F6 지도 핀 |
+| `domain/review` | `ReviewService.getUserReviews(userId)` → 사용자의 한걸음 (오래된 순) | F8 |
+| `domain/photo` | `PhotoService.getUserPhotos(userId)` → 사용자의 사진 (오래된 순) | F8 |
+| `domain/visit` | `VisitHistoryService.getJourneyVisits(userId)` → 도장, 기간, 완주 코스와 날짜 | F8 |
 
 ## 저장하지 않는 것
 
@@ -259,4 +281,5 @@ docker compose down -v
 | 추천 결과 | 요청마다 계산한다 |
 | 날씨 | `WeatherService`의 메모리 캐시 |
 | 코스 정의 | `data/courses.json` |
+| 나의 발자취의 기간·숫자·카드 | `visit`, `review`, `photo`에서 요청마다 계산한다 |
 | 사진·엽서 파일 | `app.storage.dir`. DB에는 파일 이름만 둔다 |

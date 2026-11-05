@@ -77,6 +77,9 @@
 | F7 | POST | `/api/postcards` | 엽서 생성 시작 (비동기). 사진 1장 + 한 문장 + 템플릿 |
 | F7 | GET | `/api/postcards/{postcardId}` | 생성 상태 (`PENDING`→`PROCESSING`→`COMPLETED`/`FAILED`), 완료면 이미지 URL |
 | F7 | GET | `/api/postcards/{postcardId}/image` | 엽서 이미지(JPEG). `?download=true`면 파일로 내려받기 |
+| F8 | GET | `/api/users/{userId}/journey` | 나의 발자취: 기간, 숫자, 순간 카드 (AI 없이 바로 응답) |
+| F8 | GET | `/api/users/{userId}/journey/story` | 나의 발자취 AI 이야기 (모국어 + 쉬운 한국어) |
+| F8 | GET | `/api/places/{placeId}/image` | 장소 사진 파일 (서버를 거쳐 제공) |
 
 공통 코드값 — 국적 `nationality`: `VN, CN, JP, MN, UZ, US, OTHER` / 언어 `language`: `KO, EN, VI, ZH, JA, MN, UZ`. 대문자 상수 그대로 주고받는다.
 
@@ -967,6 +970,103 @@ F5 나의 기록. 화면에 필요한 도장, 안 간 코스 장소, 코스 진�
 
 ---
 
+### GET /api/users/{userId}/journey
+
+F8 나의 발자취. **토큰 필요, 본인만**. AI를 부르지 않아 바로 응답한다. 화면을 이 API로 먼저 그리고, 이야기 카드만 `/journey/story`로 따로 불러온다.
+
+응답 200
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": {
+    "startDate": "2026-07-12",
+    "endDate": "2026-10-22",
+    "stats": { "stampCount": 18, "completedCourseCount": 3, "reviewCount": 12 },
+    "moments": [
+      {
+        "type": "FIRST_STAMP",
+        "date": "2026-07-12",
+        "placeId": 34,
+        "placeName": "서대문형무소역사관",
+        "courseName": null,
+        "content": null,
+        "imageUrl": "/api/places/34/image"
+      },
+      {
+        "type": "REVIEW",
+        "date": "2026-08-02",
+        "placeId": 53,
+        "placeName": "독립문영천시장",
+        "courseName": null,
+        "content": "시장 사람들이 친절했어요",
+        "imageUrl": "/api/photos/9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"
+      },
+      {
+        "type": "COURSE_COMPLETED",
+        "date": "2026-09-03",
+        "placeId": 53,
+        "placeName": "독립문영천시장",
+        "courseName": "Hành trình Độc lập",
+        "content": null,
+        "imageUrl": "/api/places/53/image"
+      }
+    ]
+  }
+}
+```
+
+- `startDate`, `endDate`: 도장과 한걸음 중 가장 이른 날짜와 가장 늦은 날짜. 기록이 없으면 `null`
+- `stats.stampCount`, `completedCourseCount`: 나의 기록과 같은 값이다
+- `moments`: 개수 제한 없이 전부 준다. 날짜 오름차순이고, 같은 날이면 첫 도장, 한걸음, 코스 완주 순서다. 기록이 없으면 빈 목록
+- `type`: `FIRST_STAMP`(첫 도장), `REVIEW`(한걸음 전부), `COURSE_COMPLETED`(코스 완주). "첫 도장" 같은 문구는 `type`을 보고 프론트가 언어별로 표시한다
+- 코스 완주 날짜는 코스의 3곳을 모두 방문한 날이다. `placeId`는 그중 마지막으로 방문한 곳이다
+- `courseName`: 코스 카드에만 있다. 사용자 언어 → 영어 → 한국어 순서로 고른다. 장소 이름은 한국어다
+- `imageUrl`: 서버 기준 상대 경로. 없으면 `null`. 한걸음 사진 → 그 장소의 내 사진 → 장소 사진 순서로 고른다 (코스 완주·첫 도장은 한걸음 사진 없이 그다음부터)
+- 방문 시각과 위치는 내보내지 않는다
+
+오류: 401 `USER_LOGIN_REQUIRED`, 401 `USER_INVALID_TOKEN`, 403 `USER_FORBIDDEN`, 404 `USER_NOT_FOUND`
+
+---
+
+### GET /api/users/{userId}/journey/story
+
+F8 나의 발자취 AI 이야기. **토큰 필요, 본인만**. 저장된 글이 있고 기록이 그대로면 바로 응답하고, 글이 없거나 기록이 바뀌었으면 새로 만드느라 10초 안팎 걸린다. 이야기 카드만 로딩으로 표시한다. 같은 요청을 동시에 두 번 보내지 않는다 (AI를 두 번 부른다).
+
+응답 200
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": {
+    "story": {
+      "storyNative": "Từ những ngày chỉ biết trường và nhà...",
+      "storyEasyKorean": "학교와 집만 알던 날부터 서대문의 18곳을 걸었어요."
+    }
+  }
+}
+```
+
+- `story`가 `null`인 경우: 도장과 한걸음이 모두 없거나, 저장된 글이 없는데 AI 호출이 실패한 경우. 다음에 부르면 다시 시도한다
+- AI 호출이 실패해도 이전 글이 있으면 이전 글을 준다. 그래서 AI 오류로 실패 응답을 주지 않는다
+- 글은 사용자의 언어와 국적으로 쓴다. 기록이 바뀌면 다음에 부를 때 내용도 달라진다
+
+오류: 401 `USER_LOGIN_REQUIRED`, 401 `USER_INVALID_TOKEN`, 403 `USER_FORBIDDEN`, 404 `USER_NOT_FOUND`
+
+---
+
+### GET /api/places/{placeId}/image
+
+F8 장소 사진 파일. JSON이 아니라 이미지 바이트를 그대로 준다. 토큰 없이 부른다. 관광공사 사진은 CORS 헤더가 없어 웹에서 화면을 캡처하면 저장이 실패할 수 있으므로 서버를 거쳐 준다. 하루 동안 캐시한다.
+
+오류(JSON): 404 `PLACE_NOT_FOUND`(없는 장소), 404 `PLACE_IMAGE_NOT_FOUND`(사진이 없는 장소), 502 `EXTERNAL_API_CALL_FAILED`(원본을 받지 못함), 502 `EXTERNAL_API_INVALID_RESPONSE`(이미지가 아니거나 10MB 초과)
+
+---
+
 ### GET /api/map/pins
 
 F6 흔적 지도 — "먼저 온 유학생의 발자취". 노출 중인 장소마다 다녀간 사람 수, 국적 분포, 한걸음 수를 준다. 핀을 누르면 `GET /api/places/{placeId}/reviews`로 한걸음을 보여 준다.
@@ -1049,6 +1149,7 @@ curl 'localhost:8080/api/map/pins'
 | 404 | `USER_NOT_FOUND` | 없는 userId |
 | 409 | `USER_LOGIN_ID_TAKEN` | 이미 사용 중인 아이디로 가입함 |
 | 404 | `PLACE_NOT_FOUND` | 없거나 노출하지 않는 장소 |
+| 404 | `PLACE_IMAGE_NOT_FOUND` | 사진이 없는 장소 |
 | 404 | `STATION_NOT_FOUND` | 없는 stationId |
 | 404 | `RECOMMEND_NOT_FOUND` | 지금 추천할 장소가 없음 (노출 중이고 해설이 있는 장소가 하나도 없다) |
 | 403 | `PHOTO_FORBIDDEN` | 다른 사용자의 사진을 한걸음·엽서에 쓰려 함 |

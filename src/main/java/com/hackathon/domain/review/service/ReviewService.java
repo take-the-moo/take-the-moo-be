@@ -23,6 +23,7 @@ import com.hackathon.domain.user.dto.response.UserResponseDto;
 import com.hackathon.domain.user.service.UserService;
 import com.hackathon.global.common.Language;
 import com.hackathon.global.common.Nationality;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,19 @@ public class ReviewService {
     public Map<Long, Long> countByPlace() {
         return reviewRepository.countByPlace().stream()
                 .collect(Collectors.toMap(PlaceReviewCount::placeId, PlaceReviewCount::reviewCount));
+    }
+
+    /** 사용자의 한걸음. 오래된 순 (F8 나의 발자취). 권한은 부르는 쪽에서 UserService.getUser로 확인한다 */
+    public List<UserReview> getUserReviews(String userId) {
+        return reviewRepository.findAllByUserIdOrderByCreatedAtAscIdAsc(userId).stream()
+                .map(UserReview::from)
+                .toList();
+    }
+
+    /** 시연 계정의 한걸음을 지난 날짜로 넣는다. 사람이 쓴 시연 데이터라 필터를 거치지 않는다. 실제 사용자 글에는 쓰지 않는다 */
+    public void addDemoReview(String userId, Long placeId, String content, Language language, LocalDateTime writtenAt) {
+        Review review = reviewRepository.save(Review.create(placeId, userId, content, language));
+        reviewRepository.backdate(review.getId(), writtenAt);
     }
 
     public ReviewResponseDto create(Long placeId, ReviewCreateRequestDto request) {

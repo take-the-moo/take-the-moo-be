@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -66,6 +67,39 @@ public class VisitHistoryService {
         int completedCourseCount = (int) progresses.stream().filter(CourseProgress::completed).count();
         return new VisitHistoryResponseDto(stamps.size(), completedCourseCount, stamps,
                 undiscovered(progresses), courses, days(known, places));
+    }
+
+    /**
+     * F8 나의 발자취에 쓸 방문 정보. 도장 수와 완주 코스 수는 나의 기록과 같은 값이다.
+     * 완주 날짜는 코스의 장소를 모두 처음 방문한 날이라 다시 방문해도 바뀌지 않는다.
+     */
+    public JourneyVisits getJourneyVisits(String userId) {
+        UserResponseDto user = userService.getUser(userId);
+        List<Visit> visits = visitRepository.findAllByUserIdOrderByVisitedDateDescIdAsc(user.userId());
+        Set<Long> visitedPlaceIds = visits.stream().map(Visit::getPlaceId).collect(Collectors.toSet());
+        Map<Long, Place> places = placeService.getPlacesByIds(visitedPlaceIds).stream()
+                .collect(Collectors.toMap(Place::getId, Function.identity()));
+        List<Visit> known = visits.stream().filter(visit -> places.containsKey(visit.getPlaceId())).toList();
+        List<Stamp> stamps = stamps(known, places);
+        List<JourneyVisits.CompletedCourse> completed = courseProgressReader
+                .read(courseRegistry.findAll(), visitedPlaceIds).stream()
+                .filter(CourseProgress::completed)
+                .flatMap(progress -> completedCourse(progress, stamps, user.language()).stream())
+                .toList();
+        return new JourneyVisits(stamps,
+                known.isEmpty() ? null : known.getFirst().getVisitedDate(),
+                completed);
+    }
+
+    /** 최근 순인 도장 중 이 코스의 장소를 처음 만난 곳이 마지막으로 방문한 곳이다 */
+    private static Optional<JourneyVisits.CompletedCourse> completedCourse(CourseProgress progress, List<Stamp> stamps,
+                                                                           Language language) {
+        Set<Long> stopIds = progress.stops().stream().map(Place::getId).collect(Collectors.toSet());
+        return stamps.stream()
+                .filter(stamp -> stopIds.contains(stamp.placeId()))
+                .findFirst()
+                .map(last -> new JourneyVisits.CompletedCourse(progress.course().localizedName(language),
+                        last.firstVisitedDate(), last.placeId(), last.name()));
     }
 
     /** 장소당 하나. 처음 방문한 날이 최근인 순, 같은 날이면 나중에 찍은 도장이 먼저 */
