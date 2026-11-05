@@ -15,8 +15,13 @@ public record AppProperties(
         @DefaultValue Weather weather,
         @DefaultValue Tour tour,
         @DefaultValue Station station,
-        @DefaultValue Demo demo
+        @DefaultValue Demo demo,
+        @DefaultValue Visit visit
 ) {
+
+    /** 방문 도장. 장소에서 이 반경(미터) 안이어야 도장을 준다 */
+    public record Visit(@DefaultValue("200") int stampRadiusMeters) {
+    }
 
     /** 업로드 사진·생성 엽서를 저장하는 로컬 디렉터리 */
     public record Storage(@DefaultValue("./uploads") String dir) {

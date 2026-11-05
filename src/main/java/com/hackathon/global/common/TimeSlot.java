@@ -9,28 +9,16 @@ import java.util.Optional;
  */
 public enum TimeSlot {
 
-    MORNING(LocalTime.of(6, 0), LocalTime.of(11, 0)),
-    AFTERNOON(LocalTime.of(11, 0), LocalTime.of(17, 0)),
-    EVENING(LocalTime.of(17, 0), LocalTime.of(21, 0));
+    MORNING,
+    AFTERNOON,
+    EVENING;
 
-    /** 포함 */
-    private final LocalTime start;
-    /** 미포함 */
-    private final LocalTime end;
-
-    TimeSlot(LocalTime start, LocalTime end) {
-        this.start = start;
-        this.end = end;
-    }
-
-    /**
-     * 시각이 속한 시간대. 밤(21–06)처럼 맞는 시간대가 없으면 empty — F2 추천은 이때 시간대 조건을 뺀다.
-     * 경계는 시작 포함·끝 미포함이다 (11:00은 AFTERNOON, 21:00은 empty).
-     */
+    /** 시각이 속한 시간대. 밤(21–06)처럼 맞는 시간대가 없으면 비어 있다 */
     public static Optional<TimeSlot> from(LocalTime time) {
-        for (TimeSlot slot : values()) {
-            if (!time.isBefore(slot.start) && time.isBefore(slot.end)) return Optional.of(slot);
-        }
+        int hour = time.getHour();
+        if (hour >= 6 && hour < 11) return Optional.of(MORNING);
+        if (hour >= 11 && hour < 17) return Optional.of(AFTERNOON);
+        if (hour >= 17 && hour < 21) return Optional.of(EVENING);
         return Optional.empty();
     }
 }
