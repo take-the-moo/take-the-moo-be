@@ -1,6 +1,7 @@
 package com.hackathon.domain.llm.service;
 
 import com.anthropic.errors.AnthropicServiceException;
+import com.anthropic.models.messages.OutputConfig;
 import com.hackathon.domain.llm.dto.response.ChatResponseDto;
 import com.hackathon.domain.llm.dto.response.StreamEvent;
 import com.hackathon.domain.llm.dto.response.UsageDto;
@@ -175,6 +176,10 @@ public class LlmClient {
                 .model(prompt.model())
                 .temperature(prompt.temperature())
                 .maxTokens(prompt.maxTokens());
+        // prompts.yml에 적은 것만 보낸다 (없으면 모델 기본값: Claude 5는 adaptive thinking, effort medium)
+        if (prompt.effort() != null) options.effort(OutputConfig.Effort.of(prompt.effort()));
+        if ("disabled".equals(prompt.thinking())) options.thinkingDisabled();
+        if ("adaptive".equals(prompt.thinking())) options.thinkingAdaptive();
 
         return chatClient.prompt()
                 .options(options)

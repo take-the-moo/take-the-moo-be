@@ -184,7 +184,7 @@ public class RecommendService {
         LlmPrompt prompt = promptRegistry.resolve(PROMPT_KEY, Map.of(
                 "nationality", nationality.getKoreanName(),
                 "language", language.getKoreanName()));
-        String input = input(candidates, time, timeSlot, weather);
+        String input = input(candidates, nationality, time, timeSlot, weather);
         NearbyPlace first = candidates.getFirst();
         try {
             RecommendChoice choice = llmClient.entity(prompt, input, RecommendChoice.class,
@@ -196,8 +196,12 @@ public class RecommendService {
         }
     }
 
-    /** user 메시지로 넘기는 상황과 후보. 필드 의미는 prompts.yml recommend.system에 적혀 있다. 좌표는 넣지 않는다 */
-    private String input(List<NearbyPlace> candidates, LocalTime time, TimeSlot timeSlot, CurrentWeather weather) {
+    /**
+     * user 메시지로 넘기는 상황과 후보. 필드 의미는 prompts.yml recommend.system에 적혀 있다. 좌표는 넣지 않는다.
+     * connection은 사람이 검토한 내 나라 연결(없으면 null) — F3 장면의 한 줄 연결과 같은 값이라 두 화면의 말이 맞는다
+     */
+    private String input(List<NearbyPlace> candidates, Nationality nationality, LocalTime time, TimeSlot timeSlot,
+                         CurrentWeather weather) {
         Map<String, Object> situation = new LinkedHashMap<>();
         situation.put("time", time.format(HH_MM));
         situation.put("timeSlot", timeSlot);
@@ -213,6 +217,7 @@ public class RecommendService {
             item.put("sensitiveHistory", place.isSensitiveHistory());
             item.put("distanceMeters", candidate.distanceMeters());
             item.put("summary", truncate(place.fieldExplanation(), SUMMARY_MAX));
+            item.put("connection", placeService.findConnection(place, nationality).orElse(null));
             return item;
         }).toList();
 

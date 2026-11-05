@@ -1,0 +1,220 @@
+{
+  "_readme": [
+    "내 나라 연결 데이터 (F2 추천 이유·F3 한 줄 연결이 같이 쓴다). 형식은 PlaceConnection 주석 참고",
+    "places[].connections의 키는 국적(VN·CN·JP·MN·UZ·US). OTHER는 넣지 않는다 (특정 나라를 가정하지 않는다)",
+    "counterpart: 그 나라의 비슷한 장소·사건 (한국어 이름). AI는 이 이름만 든다. 없는 조합은 이름 없이 공통된 경험으로 잇는다",
+    "localName: 그 사례의 현지어 이름 (선택). 사용자 언어가 그 나라 말이면 AI가 이 표기를 그대로 쓴다 (2026-11 실제 호출: 한국어 이름만 주면 베트남어 성조를 틀렸다)",
+    "counterpart 없이 link만 있으면: 특정 사례를 들지 말고 link의 방향으로만 잇는다 (가해 쪽으로 얽힌 국적 등)",
+    "link: 무엇이 닮았는지 (한국어, 짧게). 서대문 장소 쪽 사실은 그 장소 개요에 있는 것만 쓴다",
+    "2026-11-06 딥리서치 검토 반영 (69건, 근거·출처·확신도는 docs/place-connections-review.md). 고친 뒤 서버를 다시 켜면 반영된다"
+  ],
+  "places": [
+    {
+      "contentId": "130152",
+      "name": "서대문형무소역사관",
+      "connections": {
+        "VN": { "counterpart": "하노이 호아로 수용소", "localName": "Nhà tù Hỏa Lò", "link": "식민지 시기 독립운동가들이 갇혔던 감옥을 역사관으로 남긴 곳" },
+        "CN": { "counterpart": "뤼순 일아감옥 옛터 박물관(다롄)", "localName": "旅顺日俄监狱旧址博物馆", "link": "독립운동가들이 갇혔던 감옥을 그대로 남겨 역사를 기억하는 곳" },
+        "JP": { "link": "감옥을 역사관으로 남겨 자유와 평화의 뜻을 생각해 보는 공간" },
+        "MN": { "counterpart": "울란바토르 정치탄압 희생자 추모비", "link": "억울하게 갇히고 희생된 사람들을 기억하는 곳" },
+        "UZ": { "counterpart": "타슈켄트 탄압희생자 추모박물관", "localName": "Qatagʻon qurbonlari xotirasi muzeyi", "link": "나라를 위해 싸우다 갇히고 희생된 사람들을 기억하는 곳" }
+      }
+    },
+    {
+      "contentId": "1825057",
+      "name": "3.1독립선언기념탑",
+      "connections": {
+        "VN": { "counterpart": "하노이 바딘 광장", "localName": "Quảng trường Ba Đình", "link": "독립을 선언한 날을 기억하는 곳" },
+        "CN": { "counterpart": "5·4운동(베이징 톈안먼 광장)", "localName": "五四运动", "link": "같은 1919년, 사람들이 거리로 나와 나라의 앞날을 외친 운동" },
+        "JP": { "link": "자유와 독립을 바란 사람들의 뜻을 기억하는 기념물" },
+        "MN": { "counterpart": "울란바토르 수흐바타르 광장", "localName": "Сүхбаатарын талбай", "link": "나라의 독립을 이끈 역사를 기리는 곳" },
+        "UZ": { "counterpart": "타슈켄트 독립광장", "localName": "Mustaqillik maydoni", "link": "나라의 독립을 기념하는 곳" },
+        "US": { "counterpart": "필라델피아 독립기념관", "localName": "Independence Hall", "link": "독립을 선언한 역사를 기억하는 곳" }
+      }
+    },
+    {
+      "contentId": "2813170",
+      "name": "국립대한민국임시정부기념관",
+      "connections": {
+        "CN": { "counterpart": "상하이 대한민국임시정부 옛 청사", "localName": "上海大韩民国临时政府旧址", "link": "상하이에 있던 임시정부의 역사를 이어서 보여 주는 곳" },
+        "JP": { "link": "한 나라의 역사를 기억하고 평화를 생각하는 공간" }
+      }
+    },
+    {
+      "contentId": "1829735",
+      "name": "순국선열추념탑",
+      "connections": {
+        "VN": { "counterpart": "하노이 박선 거리 열사 기념비", "localName": "Đài tưởng niệm các Anh hùng liệt sĩ đường Bắc Sơn", "link": "나라의 독립을 위해 목숨을 바친 사람들을 기리는 탑" },
+        "CN": { "counterpart": "베이징 인민영웅기념비", "localName": "人民英雄纪念碑", "link": "나라를 위해 목숨을 바친 사람들을 기리는 기념비" },
+        "JP": { "link": "희생된 사람들을 기억하고 평화를 생각하는 곳" },
+        "UZ": { "counterpart": "타슈켄트 독립광장 '애도하는 어머니' 기념비", "localName": "Motamsaro ona", "link": "나라를 위해 목숨을 잃은 사람들을 기리는 곳" },
+        "US": { "counterpart": "알링턴 국립묘지", "localName": "Arlington National Cemetery", "link": "나라를 위해 목숨을 잃은 사람들을 기리는 곳" }
+      }
+    },
+    {
+      "contentId": "128622",
+      "name": "서대문독립공원",
+      "connections": {
+        "JP": { "link": "역사를 돌아보며 평화를 생각하고 걷는 공원" }
+      }
+    },
+    {
+      "contentId": "1828571",
+      "name": "독립관",
+      "connections": {
+        "CN": { "link": "스스로 서려던 그 시대 사람들이 모여 토론하던 곳" },
+        "JP": { "link": "독립을 위해 애쓴 사람들을 기억하는 곳" },
+        "US": { "counterpart": "보스턴 패뉴얼 홀", "localName": "Faneuil Hall", "link": "독립을 놓고 시민들이 모여 토론하던 집회소" }
+      }
+    },
+    {
+      "contentId": "127425",
+      "name": "독립문",
+      "connections": {
+        "CN": { "link": "어떤 간섭도 받지 않고 스스로 서겠다는 다짐을 담은 문" },
+        "UZ": { "counterpart": "타슈켄트 독립광장 에즈굴리크 아치", "localName": "Ezgulik arkasi", "link": "나라의 독립을 상징하는 문" },
+        "US": { "counterpart": "뉴욕 워싱턴 스퀘어 아치", "localName": "Washington Square Arch", "link": "돌로 쌓아 올린 기념 아치" }
+      }
+    },
+    {
+      "contentId": "2789102",
+      "name": "독립문영천시장",
+      "connections": {
+        "VN": { "counterpart": "호찌민 벤탄 시장", "localName": "Chợ Bến Thành", "link": "먹거리와 사람 냄새가 가득한 오래된 시장" },
+        "CN": { "counterpart": "동네 차이스창(菜市场)", "localName": "菜市场", "link": "주민들이 매일 장을 보는 골목 시장" },
+        "JP": { "counterpart": "도쿄 아메요코 상점가", "localName": "アメ横", "link": "먹거리 가게가 줄지어 선 활기찬 시장 골목" },
+        "MN": { "counterpart": "울란바토르 나랑톨 시장", "localName": "Нарантуул зах", "link": "없는 게 없는 동네 사람들의 큰 시장" },
+        "UZ": { "counterpart": "타슈켄트 초르수 바자르", "localName": "Chorsu bozori", "link": "먹거리와 사람 냄새가 가득한 오래된 시장" },
+        "US": { "counterpart": "동네 파머스 마켓", "localName": "farmers market", "link": "주민들이 들러 먹거리를 사는 시장" }
+      }
+    },
+    {
+      "contentId": "2773278",
+      "name": "모래내시장 먹자골목",
+      "connections": {
+        "VN": { "counterpart": "하노이 똥주이떤 음식거리", "localName": "Phố ẩm thực Tống Duy Tân", "link": "작은 식당이 모여 밤늦게까지 사람이 찾는 먹거리 골목" },
+        "CN": { "counterpart": "샤오츠제(小吃街)", "localName": "小吃街", "link": "작은 음식점이 모여 있는 먹거리 골목" },
+        "JP": { "counterpart": "요코초(横丁) 골목", "localName": "横丁", "link": "작은 가게가 다닥다닥 붙은 먹거리 골목" }
+      }
+    },
+    {
+      "contentId": "126531",
+      "name": "무악산 동봉수대 터",
+      "connections": {
+        "CN": { "counterpart": "만리장성의 봉화대", "localName": "烽火台", "link": "낮에는 연기, 밤에는 불빛으로 급한 소식을 전하던 곳" },
+        "MN": { "counterpart": "몽골 제국의 역참(우르퉁)", "localName": "Өртөө", "link": "먼 곳까지 급한 소식을 전하던 옛 통신망" },
+        "US": { "counterpart": "보스턴 올드 노스 교회(폴 리비어의 등불 신호)", "localName": "Old North Church", "link": "불빛 신호로 급한 소식을 알리던 곳" }
+      }
+    },
+    {
+      "contentId": "126503",
+      "name": "봉원사(서울)",
+      "connections": {
+        "VN": { "counterpart": "하노이 한기둥 사원", "localName": "Chùa Một Cột", "link": "도심 속에서 오래 이어져 온 절" },
+        "CN": { "counterpart": "베이징 옹화궁", "localName": "雍和宫", "link": "도시 한가운데서 불교 의식을 이어 가는 절" },
+        "JP": { "counterpart": "도쿄 센소지(아사쿠사)", "localName": "浅草寺", "link": "도심 속에서 오래 이어져 온 절" },
+        "MN": { "counterpart": "울란바토르 간단 사원", "localName": "Гандантэгчинлэн хийд", "link": "도시 한가운데서 불교 의식을 이어 가는 절" }
+      }
+    },
+    {
+      "contentId": "128028",
+      "name": "백련사(서대문)",
+      "connections": {
+        "VN": { "counterpart": "하노이 쩐꾸옥 사원", "localName": "Chùa Trấn Quốc", "link": "천 년 넘게 이어져 온 오래된 절" },
+        "CN": { "counterpart": "항저우 영은사", "localName": "灵隐寺", "link": "천 년 넘게 이어져 온 오래된 절" },
+        "JP": { "counterpart": "교토 기요미즈데라", "localName": "清水寺", "link": "천 년 넘게 이어져 온 오래된 절" },
+        "MN": { "counterpart": "에르덴조 사원(하르호린)", "localName": "Эрдэнэ зуу", "link": "나라에서 가장 오래된 절 가운데 하나" }
+      }
+    },
+    {
+      "contentId": "337557",
+      "name": "옥천암(서울)",
+      "connections": {
+        "CN": { "counterpart": "러산대불", "localName": "乐山大佛", "link": "바위에 새긴 불상" }
+      }
+    },
+    {
+      "contentId": "130448",
+      "name": "서대문자연사박물관",
+      "connections": {
+        "CN": { "counterpart": "베이징 국가자연박물관(옛 베이징자연박물관)", "localName": "国家自然博物馆", "link": "생물과 지질을 직접 보고 체험하는 자연사박물관" },
+        "JP": { "counterpart": "도쿄 우에노 국립과학박물관", "localName": "国立科学博物館", "link": "생물과 지질을 직접 보고 체험하는 박물관" },
+        "MN": { "counterpart": "울란바토르 공룡박물관(몽골 자연사박물관)", "link": "고비의 공룡 화석으로 오래전 생물의 역사를 보는 곳" },
+        "US": { "counterpart": "뉴욕 미국자연사박물관", "localName": "American Museum of Natural History", "link": "생물과 지질을 직접 보고 체험하는 자연사박물관" }
+      }
+    },
+    {
+      "contentId": "2661502",
+      "name": "서대문 안산(안산자락길)",
+      "connections": {
+        "CN": { "counterpart": "베이징 샹산(향산)", "localName": "香山", "link": "도시 가까이에서 가볍게 오르는 산" },
+        "JP": { "counterpart": "도쿄 다카오산", "localName": "高尾山", "link": "도시 가까이에서 가볍게 걷는 숲길" },
+        "MN": { "counterpart": "울란바토르 복드항산", "localName": "Богд хан уул", "link": "도시 바로 옆에서 오르는 산" },
+        "US": { "counterpart": "로스앤젤레스 그리피스 공원", "localName": "Griffith Park", "link": "도시 바로 옆에서 가볍게 걷는 산길" }
+      }
+    },
+    {
+      "contentId": "264375",
+      "name": "연세로",
+      "connections": {
+        "VN": { "counterpart": "하노이 호안끼엠 보행자 거리", "localName": "Phố đi bộ Hồ Gươm", "link": "거리공연과 젊은 사람들로 활기찬 길" },
+        "CN": { "counterpart": "베이징 우다오커우", "localName": "五道口", "link": "대학가의 젊은 사람들로 활기찬 거리" },
+        "JP": { "counterpart": "도쿄 하라주쿠 다케시타 거리", "localName": "竹下通り", "link": "젊은 사람들이 모이는 활기찬 거리" },
+        "UZ": { "counterpart": "타슈켄트 브로드웨이(사일고흐 거리)", "localName": "Sayilgoh ko'chasi", "link": "거리공연과 사람들로 활기찬 길" }
+      }
+    },
+    {
+      "contentId": "3082166",
+      "name": "신촌그래피티벽화터널",
+      "connections": {
+        "VN": { "counterpart": "하노이 풍흥 벽화거리", "localName": "Phố bích họa Phùng Hưng", "link": "낡은 굴다리를 그림으로 바꿔 사람들이 찾게 된 곳" }
+      }
+    },
+    {
+      "contentId": "2667611",
+      "name": "이대거리",
+      "connections": {
+        "CN": { "counterpart": "상하이 톈쯔팡", "localName": "田子坊", "link": "골목 곳곳에 작은 가게와 카페가 들어선 거리" },
+        "JP": { "counterpart": "도쿄 시모키타자와", "localName": "下北沢", "link": "작은 옷가게와 카페가 골목마다 이어진 거리" },
+        "US": { "counterpart": "브루클린 윌리엄스버그", "localName": "Williamsburg", "link": "청년들의 가게가 들어서며 되살아난 동네" }
+      }
+    },
+    {
+      "contentId": "3544787",
+      "name": "연희숲속쉼터",
+      "connections": {
+        "CN": { "counterpart": "우한대학교 벚꽃", "localName": "武汉大学樱花", "link": "봄마다 벚꽃을 보러 사람들이 몰리는 곳" },
+        "JP": { "counterpart": "도쿄 신주쿠 교엔", "localName": "新宿御苑", "link": "봄이면 벚꽃을 보러 사람들이 모이는 정원" },
+        "US": { "counterpart": "워싱턴 D.C. 타이들 베이슨 벚꽃", "localName": "Tidal Basin", "link": "봄이면 벚꽃을 보러 사람들이 모이는 곳" }
+      }
+    },
+    {
+      "contentId": "130949",
+      "name": "이화여대 자연사박물관",
+      "connections": {
+        "US": { "counterpart": "하버드 자연사박물관", "localName": "Harvard Museum of Natural History", "link": "대학 안에서 연구와 교육을 함께 하는 자연사박물관" }
+      }
+    },
+    {
+      "contentId": "2553390",
+      "name": "우석뮤지엄",
+      "connections": {
+        "CN": { "counterpart": "항저우 시링인서(西泠印社)", "localName": "西泠印社", "link": "전각과 서예를 모아 보여 주는 곳" }
+      }
+    },
+    {
+      "contentId": "1829610",
+      "name": "송재서재필선생상",
+      "connections": {
+        "US": { "counterpart": "필라델피아 벤저민 프랭클린 동상", "localName": "Benjamin Franklin", "link": "신문을 펴내고 나라의 독립과 개혁에 힘쓴 인물" }
+      }
+    },
+    {
+      "contentId": "1837036",
+      "name": "해병대 104고지 전적비",
+      "connections": {
+        "US": { "counterpart": "워싱턴 한국전쟁 참전용사 기념비", "localName": "Korean War Veterans Memorial", "link": "한국전쟁에서 싸우다 숨진 사람들을 기리는 곳" }
+      }
+    }
+  ]
+}
