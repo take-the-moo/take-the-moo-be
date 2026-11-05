@@ -5,14 +5,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/app/config/application-secret.yml
       - DB_URL=jdbc:mysql://mysql:3306/hackathon
-      # 값 없이 이름만 쓰면 셸/.env에 있을 때만 넘긴다. 기본값을 넣으면 환경변수가 yml보다 우선해서 secret 파일 값을 덮는다
+      # 값 없이 이름만 쓰면 셸/.env에 있을 때만 넘긴다. 기본값을 넣으면 환경변수가 yml보다 우선해서 application.yml 값을 덮는다
       - ANTHROPIC_API_KEY
       - LLM_MOCK
-    volumes:
-      # 파일 단위로 마운트하면 파일이 없을 때 Docker가 빈 디렉터리를 만들어 버려서 디렉터리째 마운트한다
-      - ./src/main/resources:/app/config:ro
     depends_on:
       mysql:
         condition: service_healthy

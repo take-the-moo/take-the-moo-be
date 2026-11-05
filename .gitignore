@@ -7,7 +7,9 @@ build/
 .env
 .env.*
 !.env.example
-application-secret.yml
+
+### 로컬 설정 (API 키 포함 — 팀원끼리 직접 공유) ###
+/src/main/resources/application.yml
 
 ### IntelliJ IDEA ###
 .idea/
