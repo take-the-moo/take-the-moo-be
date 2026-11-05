@@ -9,7 +9,9 @@
 #
 # 서비스 프롬프트 공통 원칙 (각 system에 필요한 만큼 넣는다):
 #   - 입력으로 받은 장소·해설 데이터만 근거로 쓴다. 없는 사실을 지어내지 않는다
-#   - 식민지 역사가 얽힌 장소는 누군가를 탓하지 않고 "기억과 평화의 공간"으로 담담하게 전한다
+#   - 식민지 역사가 얽힌 장소(sensitiveHistory)는 사실은 그대로, 표현은 담담하게 전한다
+#     누가·언제·무엇을 했는지는 숨기지 않는다 / 감정을 싣는 수식어("만행", "탄압기관" 등)와
+#     특정 국가·국민 전체를 겨냥하는 표현은 쓰지 않는다 / "기억과 평화의 공간"으로 끝맺는다
 #   - 언어는 {language}(Language.koreanName), 국적은 {nationality}(Nationality.koreanName) 변수로 받는다
 #
 # 예정 promptKey (기능 구현 때 추가): recommend(F2) · scene(F3) · translate(F4·F6) · moderate(F6)
