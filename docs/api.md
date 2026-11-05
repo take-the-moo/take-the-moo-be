@@ -55,7 +55,7 @@
 | F4 | POST | `/api/explanations` | 선택한 장소 해설 (사용자 언어로 번역) |
 | F4·F6·F7 | POST | `/api/photos` | 사진 업로드 (multipart, 10MB 이하 jpeg·png·webp) |
 | F4·F6·F7 | GET | `/api/photos/{photoId}` | 사진 파일 |
-| F5 | POST | `/api/visits` | 방문 도장 |
+| F5 | POST | `/api/visits` | 장소 근처에서 방문 도장 (이어 갈 코스·다음 장소 포함) |
 | F5 | GET | `/api/users/{userId}/visits` | 날짜별 방문 기록, 코스 진행도 |
 | F6 | GET | `/api/map/pins` | 장소별 방문 수·국적 분포 |
 | F6 | GET | `/api/places/{placeId}/reviews` | 한걸음 목록 (보는 사람 언어로 번역) |
@@ -576,6 +576,165 @@ F6 한걸음 작성. 장소에 한 줄 후기를 남긴다. 저장 전에 두 �
 
 ---
 
+### POST /api/postcards
+
+F7 회고 엽서 생성 시작. 사진 1장 + 한 문장을 템플릿에 넣은 JPEG 한 장을 만든다. **비동기**라 바로 `PENDING`으로 돌려주고, 프론트는 `GET /api/postcards/{postcardId}`로 1~2초마다 상태를 확인한다.
+
+- 사진은 원본 그대로 쓴다 (휴대폰 사진의 회전 정보는 반영한다). 사진 칸 비율에 맞춰 가운데를 자른다
+- 제목(사용자 언어로 "날짜, 장소")은 AI가 쓰고, 제목과 한 문장은 서버가 템플릿 글꼴로 쓴다. 목 모드·AI 실패면 기본 제목(언어별 날짜 · 한국어 장소)
+- 보통 2~3초 안에 끝난다
+- 제목의 장소는 사진을 올릴 때 준 `placeId`. 없으면 "서대문"
+
+요청 (`Content-Type: application/json`)
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| userId | string | O | `POST /api/users`가 돌려준 userId |
+| photoId | string | O | `POST /api/photos`로 올린 **내** 사진 |
+| comment | string | O | 엽서에 쓸 한 문장, 100자 이하 |
+| template | string | - | 템플릿. 지금은 `BASIC` 하나 (비우면 `BASIC`) |
+
+```json
+{ "userId": "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c", "photoId": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+  "comment": "독립문 앞에서 처음으로 한국의 가을을 느꼈다" }
+```
+
+응답 201
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 201,
+  "message": "성공적으로 생성하였습니다.",
+  "data": {
+    "postcardId": "c7d8e9f0-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+    "status": "PENDING",
+    "template": "BASIC",
+    "imageUrl": null,
+    "downloadUrl": null,
+    "errorCode": null
+  }
+}
+```
+
+오류: 404 `USER_NOT_FOUND`, 403 `PHOTO_FORBIDDEN`(남의 사진), 404 `PHOTO_NOT_FOUND`, 422 `COMMON_VALIDATION_FAILED`(빈 한 문장, 100자 초과, photoId 누락), 400 `COMMON_INVALID_REQUEST`(없는 템플릿)
+
+---
+
+### GET /api/postcards/{postcardId}
+
+엽서 생성 상태. `data` 형식은 `POST /api/postcards`와 같다.
+
+| status | 뜻 | 프론트 |
+|---|---|---|
+| `PENDING` | 대기 중 | 계속 확인 |
+| `PROCESSING` | 만드는 중 | 계속 확인 |
+| `COMPLETED` | 완성. `imageUrl`(보기)·`downloadUrl`(내려받기)이 온다 | 이미지 표시 |
+| `FAILED` | 실패. `errorCode`에 사유 | 다시 만들기 안내 |
+
+`errorCode`: `RENDER_FAILED`(사진을 읽지 못함 — 깨진 파일 등), `PHOTO_FILE_MISSING`(사진 파일이 없음), `INTERRUPTED`(만드는 중 서버가 다시 켜짐)
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": {
+    "postcardId": "c7d8e9f0-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+    "status": "COMPLETED",
+    "template": "BASIC",
+    "imageUrl": "/api/postcards/c7d8e9f0-1a2b-3c4d-5e6f-7a8b9c0d1e2f/image",
+    "downloadUrl": "/api/postcards/c7d8e9f0-1a2b-3c4d-5e6f-7a8b9c0d1e2f/image?download=true",
+    "errorCode": null
+  }
+}
+```
+
+오류: 404 `POSTCARD_NOT_FOUND`
+
+---
+
+### GET /api/postcards/{postcardId}/image
+
+완성된 엽서 이미지. JSON이 아니라 JPEG 바이트를 그대로 준다 (1200×1800, 템플릿에 따라 다름).
+
+| 쿼리 | 설명 |
+|---|---|
+| download | `true`면 `Content-Disposition: attachment` — 브라우저가 파일(`seodaemun-postcard.jpg`)로 저장한다. 없으면 `inline`(화면에 표시) |
+
+- 내려받기 버튼은 `<a href="{서버}/api/postcards/{id}/image?download=true">`면 된다. 아이폰에서 사진 앱에 넣으려면 이미지를 길게 눌러 저장하거나 `navigator.share`로 공유한다
+
+오류(JSON): 409 `POSTCARD_NOT_READY`(아직 만드는 중이거나 실패), 404 `POSTCARD_NOT_FOUND`
+
+---
+
+### POST /api/visits
+
+F5 방문 도장. 장소 근처(기본 200m)에 있으면 도장을 찍고, 이어 가기 좋은 코스와 다음 장소를 함께 돌려준다. 좌표는 거리 계산에만 쓰고 저장하지 않는다.
+
+위치 권한을 거부했으면 이 API를 부르지 말고 안내를 보여 준다 (좌표가 없으면 422).
+
+요청 (`Content-Type: application/json`)
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| userId | string | O | `POST /api/users`가 돌려준 userId |
+| placeId | number | O | 도장을 찍을 장소 ID |
+| lat | number | O | 현재 위도 (-90~90) |
+| lng | number | O | 현재 경도 (-180~180) |
+| simulatedWeather | string | - | 시연용 날씨 (`CLEAR, RAINY, SNOWY`). 비우면 실제 날씨 |
+| simulatedTime | string | - | 시연용 시각 (`15:20`). 비우면 현재 시각 |
+
+시연에서는 도장을 찍을 **장소의 좌표**를 `lat`, `lng`로 보낸다. 역 좌표를 보내면 먼 장소에서 `VISIT_TOO_FAR`가 된다.
+
+```json
+{ "userId": "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c", "placeId": 34, "lat": 37.5743, "lng": 126.9555,
+  "simulatedWeather": "RAINY", "simulatedTime": "15:20" }
+```
+
+응답 201 (새 도장) / 200 (오늘 이미 찍은 도장, `alreadyStamped: true`. 거리는 보지 않는다)
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 201,
+  "message": "성공적으로 생성하였습니다.",
+  "data": {
+    "visitId": 1,
+    "placeId": 34,
+    "placeName": "서대문형무소역사관",
+    "visitedDate": "2026-11-08",
+    "alreadyStamped": false,
+    "firstVisit": true,
+    "recommendedCourse": {
+      "courseId": "independence",
+      "name": "Hành trình Độc lập",
+      "visitedCount": 1,
+      "totalCount": 3,
+      "completed": false,
+      "stops": [
+        { "placeId": 34, "name": "서대문형무소역사관", "visited": true },
+        { "placeId": 4, "name": "독립문", "visited": false },
+        { "placeId": 53, "name": "독립문영천시장", "visited": false }
+      ],
+      "next": { "placeId": 4, "name": "독립문", "walkingMinutes": 7 }
+    }
+  }
+}
+```
+
+- `firstVisit`: 이 장소에 처음 왔으면 `true`. 처음이면 "도장 획득!", 아니면 "다시 왔어요"처럼 구분할 수 있다
+- `recommendedCourse`: 이 장소가 든 코스 중 하나. 이번 도장으로 완주한 코스 → 미완주 중 많이 진행한 코스 → 남은 거리가 짧은 코스 순서로 고른다. 코스에 없는 장소이거나 이어 갈 코스가 없으면 `null`
+- `name`: 사용자 언어로 된 코스 이름. 없으면 영어, 그다음 한국어. 장소 이름은 한국어다
+- 진행도는 날짜와 순서에 상관없이 누적된다. 완주하면 `completed: true`, `next: null`
+- `next`: 남은 장소 중 지금 시간대에 맞고 비·눈이면 실내인 곳에서 가장 가까운 곳. 그런 곳이 없으면 남은 곳 중 가장 가까운 곳
+- `walkingMinutes`: 직선거리로 계산한 추정치라 실제보다 짧을 수 있다
+- 방문 시각은 내보내지 않는다. 날짜(`visitedDate`)까지만
+
+오류: 422 `VISIT_TOO_FAR`(장소에서 멀다), 404 `USER_NOT_FOUND`, 404 `PLACE_NOT_FOUND`, 422 `COMMON_VALIDATION_FAILED`(좌표 없음, 범위 밖), 400 `COMMON_INVALID_REQUEST`(없는 날씨 코드, 시각 형식 오류)
+
+---
+
 ### GET /api/health
 
 ```json
@@ -601,6 +760,8 @@ F6 한걸음 작성. 장소에 한 줄 후기를 남긴다. 저장 전에 두 �
 | 404 | `STATION_NOT_FOUND` | 없는 stationId |
 | 403 | `PHOTO_FORBIDDEN` | 다른 사용자의 사진을 한걸음·엽서에 쓰려 함 |
 | 404 | `PHOTO_NOT_FOUND` | 없는 photoId |
+| 404 | `POSTCARD_NOT_FOUND` | 없는 postcardId |
+| 409 | `POSTCARD_NOT_READY` | 완성 전(또는 실패한) 엽서의 이미지를 요청함 |
 | 404 | `STORAGE_NOT_FOUND` | 파일 기록은 있는데 저장소에 파일이 없음 |
 | 405 | `COMMON_METHOD_NOT_ALLOWED` | 지원하지 않는 HTTP 메서드 |
 | 415 | `COMMON_UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
@@ -609,6 +770,7 @@ F6 한걸음 작성. 장소에 한 줄 후기를 남긴다. 저장 전에 두 �
 | 422 | `PLACE_EXPLANATION_MISSING` | 장소에 현장 해설 원문(해설·개요)이 없음 |
 | 422 | `STATION_INVALID_LOCATION` | `lat`·`lng` 중 하나만 오거나 범위(위도 ±90, 경도 ±180)를 벗어남 |
 | 422 | `REVIEW_INAPPROPRIATE` | 한걸음에 욕설·혐오·광고·연락처가 있음. 저장되지 않는다 |
+| 422 | `VISIT_TOO_FAR` | 장소에서 멀어 도장을 받을 수 없음 |
 | 500 | `COMMON_INTERNAL_ERROR` | 서버 내부 오류 |
 | 500 | `STORAGE_WRITE_FAILED` | 파일을 저장하지 못함 |
 | 502 | `LLM_CALL_FAILED` | AI 호출 실패 (인증·요청 한도·서버 오류 등) |

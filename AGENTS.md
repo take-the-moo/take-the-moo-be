@@ -36,7 +36,7 @@ Swagger: http://localhost:8080/swagger-ui.html · 프론트 명세: `docs/api.md
 | 사진 (F4·F6·F7) | `domain/photo` | `POST /api/photos` | - |
 | F5 방문 도장·기록 | `domain/visit` | `POST /api/visits`, `GET /api/users/{userId}/visits` | - |
 | F6 흔적 지도·한걸음 | `domain/review`, `domain/visit` | `GET /api/map/pins`, `GET·POST /api/places/{placeId}/reviews` | 한걸음 번역, 욕설·광고 필터 |
-| F7 회고 엽서 | `domain/postcard` | `POST /api/postcards`, `GET /api/postcards/{postcardId}`, `GET /api/postcards/{postcardId}/image` | 사진 1장을 템플릿 그림체로 다시 그린다 (OpenAI). 제목(사용자 언어로 날짜·장소)과 한 문장은 서버가 템플릿에 쓴다 |
+| F7 회고 엽서 | `domain/postcard` | `POST /api/postcards`, `GET /api/postcards/{postcardId}`, `GET /api/postcards/{postcardId}/image` | 제목 한 줄을 사용자 언어로 쓴다 (날짜·장소). 원본 사진 + 제목 + 한 문장은 서버가 템플릿에 합성한다 |
 | 장소·역 데이터 | `domain/place` | (TourAPI 스케줄 동기화 + 팀 보강 데이터) | - |
 | 공통 | `global`, `domain/llm` | `GET /api/health` | - |
 
@@ -63,7 +63,7 @@ com.hackathon
 │   ├── response/    ApiResult, ApiResponse, SuccessType, ErrorCode, CommonErrorType
 │   └── exception/   DomainException, GlobalExceptionHandler
 └── domain/
-    ├── llm/         LlmClient(ChatClient 호출은 여기만), ImageClient(OpenAI 이미지 호출은 여기만), PromptRegistry, 범용 샘플 API(/api/chat 등)
+    ├── llm/         LlmClient(ChatClient 호출은 여기만), PromptRegistry, 범용 샘플 API(/api/chat 등)
     ├── place/       Place·Station 엔티티, TourApiClient·StationApiClient, PlaceSyncService·StationSyncService,
     │                DataSyncScheduler(시작 시·매일 동기화), curation/PlaceCurationRegistry(팀 보강 파일)
     ├── weather/     WeatherService.resolve(시뮬레이션 날씨) / current() — 10분 캐시, 실패해도 예외 없음
@@ -153,9 +153,7 @@ com.hackathon
 - 새 AI 기능은 한 세트로 추가한다: **promptKey + 요청/응답 DTO + 서비스 메서드 + 엔드포인트 + mock 응답 + 테스트 + docs/api.md** → `/ai-feature <설명>`
 - 프롬프트에 언어·국적을 넣을 때는 `Language.getKoreanName()`, `Nationality.getKoreanName()`을 변수로 넘긴다
 - Spring AI는 2.0 API 기준 (옵션은 불변 builder, `.mutate()`, Jackson 3 = `tools.jackson`). 1.x 예제를 그대로 쓰지 않는다
-- 엽서 이미지는 OpenAI 이미지 편집 API(사진 → 다시 그린 그림)를 `ImageClient.redraw()`로 부른다. 키는 `spring.ai.openai.api-key`(환경변수 `OPENAI_API_KEY`). 프롬프트는 `prompts.yml`의 `postcard-image`(model + system만)
-  - 목 모드·키 없음·실패면 `Optional.empty()` → 호출하는 쪽이 원본 사진으로 대체한다
-  - Spring AI OpenAI 스타터는 넣지 않는다. ChatModel이 둘이 되어 Claude(`ChatClient.Builder`) 자동 설정이 깨질 수 있다
+- 엽서(F7)는 원본 사진을 그대로 쓴다 (AI로 다시 그리지 않는다). AI는 제목 한 줄(`postcard-title`)만 쓴다. 글씨는 `PostcardRenderer`가 템플릿에 쓴다 — 템플릿 배치·배경·글꼴은 `resources/postcard/templates.json` (템플릿을 늘리면 `PostcardTemplate` 상수도 추가). 도커 이미지는 한·중·일 글꼴(`NotoSansCJK-Regular`)을 설치한다
 
 ## 외부 설정 (`app.*`, `AppProperties`)
 | 키 | 용도 | 없을 때 |
@@ -168,6 +166,7 @@ com.hackathon
 | `app.tour.sync-enabled` / `sync-cron` | 장소 동기화 켜기 / 주기 (기본 `true` / 매일 04:00) | - |
 | `app.tour.l-dong-regn-cd` / `l-dong-signgu-cd` | 법정동 코드 서울 / 서대문구 (기본 `11` / `410`). 예전 `areaCode`는 쓰지 않는다 | - |
 | `app.demo.default-station` | 위치·역이 없을 때 기준 역 (기본 `독립문`, T Data 역 한글명) | 기본값 |
+| `app.visit.stamp-radius-meters` | 방문 도장을 줄 장소 반경(미터, 기본 `200`) | 기본값 |
 
 키는 `application.yml`(gitignore) 또는 환경변수(`APP_WEATHER_KMA_SERVICE_KEY`, `APP_TOUR_SERVICE_KEY`, `APP_STATION_API_KEY`)로 넣는다. AI 키는 `spring.ai.anthropic.api-key`(`ANTHROPIC_API_KEY`), `spring.ai.openai.api-key`(`OPENAI_API_KEY`).
 
