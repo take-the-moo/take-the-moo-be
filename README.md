@@ -17,6 +17,7 @@ LLM_MOCK=true ./gradlew bootRun              # 목 모드 — API 키 없이 고
 - JDK 25가 없으면 Gradle이 첫 빌드 때 자동으로 내려받는다 (실행용 JDK는 17 이상이면 된다)
 - Swagger UI: http://localhost:8080/swagger-ui.html
 - 프론트용 명세: [docs/api.md](docs/api.md)
+- DB 설계: [docs/db.md](docs/db.md) — 엔티티를 만들거나 고치기 전에 반드시 읽는다
 
 ### Docker
 

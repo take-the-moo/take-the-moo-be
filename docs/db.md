@@ -1,0 +1,258 @@
+# DB 설계
+
+**엔티티·테이블·컬럼의 기준 문서다. 엔티티를 만들거나 고치기 전에 반드시 읽는다.**
+
+- 여기 없는 테이블·컬럼을 만들지 않는다. 필요하면 엔티티와 같은 PR에서 이 문서를 먼저 고친다.
+- 제3정규형(3NF)을 지킨다. 어긋나는 컬럼을 넣으려면 이유를 이 문서에 적는다.
+- DB는 MySQL 8.4, 테스트는 H2(MySQL 모드)다. 스키마는 JPA `ddl-auto: update`로 만든다.
+
+## 테이블 한눈에 보기
+
+| 테이블 | 엔티티 | 패키지 | 기능 | 상태 |
+|---|---|---|---|---|
+| `app_user` | `AppUser` | `domain/user` | F1 | 구현 전 |
+| `place` | `Place` | `domain/place` | 공통 | 구현됨, 컬럼 1개 전환 예정 |
+| `place_time_slot` | `Place`의 컬렉션 | `domain/place` | F2 | 전환 예정 |
+| `station` | `Station` | `domain/place` | F2 | 구현됨 |
+| `photo` | `Photo` | `domain/photo` | F4·F6·F7 | 구현 전 |
+| `visit` | `Visit` | `domain/visit` | F5·F6·F2 | 구현 전 |
+| `review` | `Review` | `domain/review` | F6·F3 | 구현 전 |
+| `review_translation` | `ReviewTranslation` | `domain/review` | F6 | 구현 전 |
+| `explanation_translation` | `ExplanationTranslation` | `domain/place` | F4 | 구현 전 |
+| `scene` | `Scene` | `domain/scene` | F3 | 구현 전 |
+| `postcard` | `Postcard` | `domain/postcard` | F7 | 구현 전 |
+| `postcard_photo` | `Postcard`의 컬렉션 | `domain/postcard` | F7 | 구현 전 |
+
+점선은 ID로만 참조하는 관계다. 외래 키는 만들지 않는다. `station`은 다른 테이블과 연결되지 않는다.
+
+```mermaid
+erDiagram
+  app_user ||..o{ photo : "user_id"
+  app_user ||..o{ visit : "user_id"
+  app_user ||..o{ review : "user_id"
+  app_user ||..o{ postcard : "user_id"
+  place ||..o{ place_time_slot : "place_id"
+  place ||..o{ photo : "place_id"
+  place ||..o{ visit : "place_id"
+  place ||..o{ review : "place_id"
+  place ||..o{ scene : "place_id"
+  place ||..o{ explanation_translation : "place_id"
+  review ||..o{ review_translation : "review_id"
+  photo |o..o{ review : "photo_id"
+  postcard ||..|{ postcard_photo : "postcard_id"
+  photo ||..o{ postcard_photo : "photo_id"
+  station {
+    bigint id PK
+    string station_code UK
+  }
+```
+
+## 공통 규칙
+
+### 꼭 지킬 것
+1. **외래 키와 JPA 연관관계를 쓰지 않는다.** `@ManyToOne` 대신 `Long placeId`, `String userId`로 참조하고, 존재 여부는 서비스에서 확인한다. 같은 애그리거트 안의 `@ElementCollection`(`place_time_slot`, `postcard_photo`)만 예외다.
+2. **다른 도메인 데이터는 그 도메인의 service로 가져온다.** 다른 도메인의 repository나 엔티티를 JPQL에서 직접 쓰지 않는다.
+3. **위치(lat/lng)를 어떤 테이블에도 저장하지 않는다.** `place`와 `station`의 좌표만 예외다.
+4. **쉼표로 여러 값을 넣지 않는다.** 여러 값이면 테이블을 나눈다.
+5. **다른 컬럼에서 계산되는 값을 저장하지 않는다.** 사용자에게서 알 수 있는 값(국적, 샘플 여부)을 복사하지 않는다.
+6. **응답에 시각을 내보내지 않는다.** 방문·한걸음은 날짜까지만 내보낸다.
+
+### 엔티티 작성법
+- 모든 엔티티는 `BaseTimeEntity`를 상속한다. 아래 표에는 `created_at`, `updated_at`을 적지 않았지만 모두 있다.
+- 이름은 자동 변환된다 (`placeId` → `place_id`). `@Table(name=...)`은 `app_user`처럼 엔티티 이름과 다를 때만 쓴다.
+- **`user`를 테이블·컬럼 이름으로 쓰지 않는다.** H2에서 예약어라 테스트가 깨질 수 있다.
+- 공개되는 ID(`app_user`, `photo`, `postcard`)는 서버가 만든 UUID 문자열이고, 나머지는 `IDENTITY`로 만든 `BIGINT`다.
+- `@Lob String`은 MySQL에서 `LONGTEXT`가 된다. 긴 글에 쓴다.
+- 유니크 제약과 인덱스는 `@Table(uniqueConstraints = ..., indexes = ...)`로 선언한다.
+
+### enum 컬럼은 반드시 VARCHAR로 만든다
+`@Enumerated(EnumType.STRING)`만 쓰면 MySQL 네이티브 `enum('A','B')` 컬럼이 된다. `ddl-auto: update`는 이 정의를 고치지 않으므로, 나중에 상수를 추가하면 INSERT가 실패할 수 있다.
+
+```java
+@Enumerated(EnumType.STRING)
+@Column(nullable = false, columnDefinition = "varchar(20)")
+private PostcardStatus status;
+```
+
+### 스키마를 바꾼 뒤
+`ddl-auto: update`는 컬럼을 추가만 하고, 삭제·이름 변경·타입 변경은 하지 않는다. 컬럼을 지우거나 바꿨다면 이 문서를 고치고 팀에 알린 뒤, 각자 로컬 DB를 초기화한다. 저장된 데이터가 모두 사라지고, `place`·`station`은 서버를 켤 때 다시 동기화된다.
+
+```bash
+docker compose down -v
+```
+
+## 테이블 정의
+
+### `app_user` 익명 사용자
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `id` | VARCHAR(36) PK | N | 서버가 만든 UUID. 프론트가 기기에 저장한다 |
+| `nationality` | VARCHAR(20) | N | `Nationality` |
+| `language` | VARCHAR(20) | N | `Language` |
+| `sample` | BOOLEAN | N | 샘플 사용자면 true |
+
+샘플 사용자도 여기에 행으로 넣는다. 샘플 방문·한걸음은 이 사용자의 `sample`로 구분한다.
+
+### `place` 장소
+| 컬럼 | 타입 | NULL | 출처 | 설명 |
+|---|---|---|---|---|
+| `id` | BIGINT PK | N | | |
+| `content_id` | VARCHAR(20) UK | N | TourAPI | 동기화 키 |
+| `content_type_id` | VARCHAR(10) | Y | TourAPI | 12 관광지, 14 문화시설, 38 쇼핑 |
+| `name` | VARCHAR(255) | N | TourAPI | |
+| `address` | VARCHAR(255) | Y | TourAPI | |
+| `latitude`, `longitude` | DOUBLE | N | TourAPI | |
+| `overview` | LONGTEXT | Y | TourAPI | 개요 |
+| `image_url` | VARCHAR(500) | Y | TourAPI | |
+| `tour_modified_time` | VARCHAR(14) | Y | TourAPI | 개요 재조회 판단용 |
+| `indoor` | BIT(1) | Y | 보강 파일 | 없으면 문화시설만 true |
+| `sensitive_history` | BIT(1) | N | 보강 파일 | 식민지 역사가 얽힌 장소 |
+| `explanation` | LONGTEXT | Y | 보강 파일 | 팀이 쓴 해설 |
+| `status` | ENUM | N | 규칙 | `ACTIVE`, `PENDING_REVIEW`, `EXCLUDED`, `INACTIVE` |
+
+- 추천·후보에는 `ACTIVE`만 쓴다.
+- 현장 해설 원문은 `Place.fieldExplanation()`을 쓴다.
+- 사라진 장소는 지우지 않고 `INACTIVE`로 바꾼다. 방문과 한걸음이 참조하기 때문이다.
+- **전환 예정:** 지금 코드에는 `recommended_time_slots`(쉼표 문자열)가 있다. `place_time_slot`으로 옮기고 삭제한다.
+
+### `place_time_slot` 장소별 추천 시간대 (전환 예정)
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `place_id` | BIGINT PK | N | |
+| `time_slot` | VARCHAR(20) PK | N | `MORNING`(06–11), `AFTERNOON`(11–17), `EVENING`(17–21) |
+
+`Place`의 `@ElementCollection`으로 만든다. 전환 PR이 머지되기 전에 F2를 구현한다면 문자열 해석을 한곳에만 두어 쉽게 바꿀 수 있게 한다.
+
+### `station` 지하철역
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `id` | BIGINT PK | N | |
+| `station_code` | VARCHAR(10) UK | N | T Data `outStnNum` |
+| `name` | VARCHAR(50) | N | |
+| `line` | VARCHAR(30) | N | |
+| `latitude`, `longitude` | DOUBLE | N | |
+
+환승역은 호선마다 한 행이다.
+
+### `photo` 사진
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `id` | VARCHAR(36) PK | N | UUID. 번호 추측을 막는다 |
+| `user_id` | VARCHAR(36) | N | |
+| `place_id` | BIGINT | Y | 장소 없이 올릴 수 있다 |
+| `stored_name` | VARCHAR(100) | N | `app.storage.dir` 안의 파일 이름 |
+| `content_type` | VARCHAR(30) | N | |
+| `size_bytes` | BIGINT | N | |
+
+- 인덱스: (`user_id`, `created_at`)
+- 오늘 찍은 사진은 `created_at`이 `SeoulTime.today()` 범위인 행으로 찾는다. 날짜 컬럼을 따로 두지 않는다.
+
+### `visit` 방문 도장
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `id` | BIGINT PK | N | |
+| `user_id` | VARCHAR(36) | N | |
+| `place_id` | BIGINT | N | |
+| `visited_date` | DATE | N | 실제 방문은 `SeoulTime.today()`. 샘플은 과거 날짜를 쓴다 |
+
+- 유니크: (`user_id`, `place_id`, `visited_date`). 하루에 한 장소당 도장 하나다.
+- 인덱스: (`visited_date`, `place_id`). 지난주 인기 조회용이다.
+- 국적 분포는 사용자별로 집계한 뒤 `UserService`로 국적을 조회해 합친다.
+- 코스는 테이블이 아니라 `src/main/resources/data/courses.json`에 `contentId` 순서로 둔다. 진행도는 `visit`으로 계산한다.
+
+### `review` 한걸음
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `id` | BIGINT PK | N | |
+| `place_id` | BIGINT | N | |
+| `user_id` | VARCHAR(36) | N | |
+| `content` | VARCHAR(200) | N | 한 줄 후기 원문 |
+| `language` | VARCHAR(20) | N | 실제 작성 언어 |
+| `photo_id` | VARCHAR(36) | Y | |
+
+- 인덱스: (`place_id`, `created_at`)
+- **`language`에 사용자 설정을 복사하지 않는다.** 요청으로 받거나 감지한 실제 작성 언어를 넣는다.
+- 필터에 걸린 후기는 저장하지 않으므로 상태 컬럼이 없다.
+- 작성자 국적은 표시할 때 `UserService`로 조회한다.
+
+### `review_translation` 한걸음 번역 캐시
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `id` | BIGINT PK | N | |
+| `review_id` | BIGINT | N | |
+| `language` | VARCHAR(20) | N | 번역 언어 |
+| `translated_content` | VARCHAR(1000) | N | |
+
+유니크: (`review_id`, `language`). 보는 사람의 언어가 원문과 같으면 번역하지 않는다.
+
+### `explanation_translation` 현장 해설 번역 캐시
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `id` | BIGINT PK | N | |
+| `place_id` | BIGINT | N | |
+| `language` | VARCHAR(20) | N | 번역 언어 |
+| `translated_text` | LONGTEXT | N | |
+| `source_hash` | VARCHAR(64) | N | 번역에 쓴 `fieldExplanation()`의 SHA-256 |
+
+유니크: (`place_id`, `language`). 현재 원문의 해시와 다르면 다시 번역한다.
+
+### `scene` 맞춤 장면 캐시
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `id` | BIGINT PK | N | |
+| `place_id` | BIGINT | N | |
+| `nationality` | VARCHAR(20) | N | 이야기를 맞춘 국적 |
+| `language` | VARCHAR(20) | N | 모국어 이야기의 언어 |
+| `story_native` | LONGTEXT | N | |
+| `story_easy_korean` | LONGTEXT | N | |
+| `connection_line` | VARCHAR(300) | N | 내 나라와 한 줄 연결 |
+| `source_hash` | VARCHAR(64) | N | 생성에 쓴 장소 원문의 SHA-256 |
+
+- 유니크: (`place_id`, `nationality`, `language`). 같은 언어라도 국적이 다르면 내용이 다르다.
+- 행마다 따로 생성한다. 쉬운 한국어를 언어와 무관하게 재사용하려면 테이블을 나눠야 한다.
+- 사용자의 국적이 아니라 요청한 국적으로 캐시한다. 그래서 `app_user`의 복사본이 아니다.
+
+### `postcard` 회고 엽서
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `id` | VARCHAR(36) PK | N | UUID |
+| `user_id` | VARCHAR(36) | N | |
+| `comment` | VARCHAR(100) | N | 소감 |
+| `style` | VARCHAR(20) | N | 그림체 |
+| `status` | VARCHAR(20) | N | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED` |
+| `image_name` | VARCHAR(100) | Y | 완료된 파일 이름 |
+| `error_code` | VARCHAR(50) | Y | 실패 사유 |
+
+인덱스: (`user_id`, `status`)
+
+### `postcard_photo` 엽서에 쓴 사진
+| 컬럼 | 타입 | NULL | 설명 |
+|---|---|---|---|
+| `postcard_id` | VARCHAR(36) PK | N | |
+| `display_order` | INT PK | N | 0~3 |
+| `photo_id` | VARCHAR(36) | N | |
+
+`Postcard`의 `@ElementCollection` + `@OrderColumn(name = "display_order")`로 만든다.
+
+## 도메인 간에 쓰는 서비스
+
+다른 도메인의 테이블이 필요하면 아래 메서드를 쓴다. 없으면 제공하는 도메인에 필요한 만큼만 추가한다. 이름은 구현하면서 바꿀 수 있지만, 역할은 유지하고 바뀌면 이 표를 고친다.
+
+| 제공 | 메서드 | 쓰는 곳 |
+|---|---|---|
+| `domain/user` | `UserService.getNationalities(userIds)` → 사용자별 국적 | F6 지도 핀, 한걸음 표시 |
+| `domain/user` | `UserService.getUser(userId)` | 사용자 확인이 필요한 모든 기능 |
+| `domain/place` | `PlaceService`의 `ACTIVE` 장소 조회 | F2, F3, F4, F5, F6 |
+| `domain/visit` | `VisitService.topPlaces(from, to, limit)` | F2 지난주 인기 |
+| `domain/photo` | `PhotoService`의 소유자 확인·사진 조회 | F4, F6, F7 |
+| `domain/review` | `ReviewService`의 장소별 한걸음 조회 | F3 |
+
+## 저장하지 않는 것
+
+| 데이터 | 처리 |
+|---|---|
+| 사용자 위치 | 요청 처리에만 쓰고 저장·로그하지 않는다 |
+| 추천 결과 | 요청마다 계산한다 |
+| 날씨 | `WeatherService`의 메모리 캐시 |
+| 코스 정의 | `data/courses.json` |
+| 사진·엽서 파일 | `app.storage.dir`. DB에는 파일 이름만 둔다 |
