@@ -63,7 +63,7 @@
 
 공통 코드값 — 국적 `nationality`: `VN, CN, JP, MN, UZ, US, OTHER` / 언어 `language`: `KO, EN, VI, ZH, JA, MN, UZ`. 대문자 상수 그대로 주고받는다.
 
-`promptKey`는 서버 `prompts.yml`에 등록된 키다. 지금 등록된 키: `chat`, `analyze`, `image`.
+`promptKey`는 서버 `prompts.yml`에 등록된 키다. 지금 등록된 키: `chat`, `analyze`, `image`, `scene`(F3 전용, `/api/scenes`가 쓴다).
 `params`는 시스템 프롬프트의 `{변수}`를 채운다 (예: `chat`은 `target`, `analyze`는 `domain`).
 
 ---
@@ -202,6 +202,51 @@ curl -F file=@photo.png -F question="이 사진에 뭐가 보여?" localhost:808
 
 ---
 
+### POST /api/scenes
+
+F3 맞춤 장면. 장소 이야기를 요청 언어와 쉬운 한국어로, 관점 국적의 역사와 잇는 한 줄과 함께 돌려준다.
+**같은 장소에 `nationality`만 바꿔 다시 부르면 다른 이야기가 온다** (발표의 "같은 장소, 다른 이야기").
+
+요청 (`Content-Type: application/json`)
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| placeId | number | O | 장소 ID (노출 중인 장소만) |
+| nationality | string | O | 관점 국적. 보통 사용자 국적(`GET /api/users/{userId}`), 국적 전환 시연에서는 다른 값 |
+| language | string | O | 이야기 언어. `storyNative`·`connectionLine`이 이 언어로 온다 |
+
+```json
+{ "placeId": 1, "nationality": "VN", "language": "VI" }
+```
+
+응답 200
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": {
+    "placeId": 1,
+    "placeName": "서대문형무소역사관",
+    "nationality": "VN",
+    "language": "VI",
+    "storyNative": "Nơi đây từng là nhà tù do Nhật Bản xây dựng vào năm 1908…",
+    "storyEasyKorean": "이곳은 1908년에 일제가 세운 감옥이 있던 곳이에요…",
+    "connectionLine": "Giống như nhà tù Hỏa Lò ở Hà Nội, nơi đây cũng là nơi giam giữ những người mơ về độc lập.",
+    "cached": false
+  }
+}
+```
+
+- 장소 × 국적 × 언어별로 서버에 저장한다. 같은 조합의 두 번째 요청부터는 AI를 부르지 않고 바로 온다(`cached: true`). 장소 설명이나 프롬프트가 바뀌면 다시 만든다
+- 처음 만들 때는 AI 호출로 몇 초 걸린다. 시연할 조합은 미리 한 번씩 불러 두면 발표 때 바로 나온다
+- 목 모드에서는 `[MOCK]`으로 시작하는 고정 이야기가 온다 (장소 이름·국적은 반영된다)
+
+오류: 404 `PLACE_NOT_FOUND`(없거나 노출하지 않는 장소), 422 `SCENE_SOURCE_MISSING`(이야기를 만들 장소 설명이 없음), 422 `COMMON_VALIDATION_FAILED`(필드 누락), 400 `COMMON_INVALID_REQUEST`(없는 코드값), 502 `LLM_CALL_FAILED`, 502 `LLM_INVALID_OUTPUT`, 504 `LLM_TIMEOUT`
+
+---
+
 ### GET /api/health
 
 ```json
@@ -222,9 +267,11 @@ curl -F file=@photo.png -F question="이 사진에 뭐가 보여?" localhost:808
 | 400 | `COMMON_INVALID_REQUEST` | JSON 형식 오류, 필수 파라미터·파트 누락, 타입 불일치 |
 | 400 | `LLM_PROMPT_NOT_FOUND` | 등록되지 않은 promptKey |
 | 404 | `COMMON_NOT_FOUND` | 없는 경로 |
+| 404 | `PLACE_NOT_FOUND` | 없거나 노출하지 않는 장소 |
 | 405 | `COMMON_METHOD_NOT_ALLOWED` | 지원하지 않는 HTTP 메서드 |
 | 415 | `COMMON_UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 422 | `COMMON_VALIDATION_FAILED` | 값 검증 실패 (빈 메시지, 길이 초과, 이미지 형식·크기). message에 필드별 사유 |
+| 422 | `SCENE_SOURCE_MISSING` | 장소에 이야기를 만들 설명(해설·개요)이 없음 |
 | 500 | `COMMON_INTERNAL_ERROR` | 서버 내부 오류 |
 | 502 | `LLM_CALL_FAILED` | AI 호출 실패 (인증·요청 한도·서버 오류 등) |
 | 502 | `LLM_INVALID_OUTPUT` | AI 응답을 정해진 구조로 해석하지 못함 (재시도 후에도) |

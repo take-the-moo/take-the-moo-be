@@ -19,7 +19,7 @@
 | `review` | `Review` | `domain/review` | F6·F3 | 구현 전 |
 | `review_translation` | `ReviewTranslation` | `domain/review` | F6 | 구현 전 |
 | `explanation_translation` | `ExplanationTranslation` | `domain/place` | F4 | 구현 전 |
-| `scene` | `Scene` | `domain/scene` | F3 | 구현 전 |
+| `scene` | `Scene` | `domain/scene` | F3 | 구현됨 |
 | `postcard` | `Postcard` | `domain/postcard` | F7 | 구현 전 |
 | `postcard_photo` | `Postcard`의 컬렉션 | `domain/postcard` | F7 | 구현 전 |
 
@@ -206,7 +206,7 @@ docker compose down -v
 | `story_native` | LONGTEXT | N | |
 | `story_easy_korean` | LONGTEXT | N | |
 | `connection_line` | VARCHAR(300) | N | 내 나라와 한 줄 연결 |
-| `source_hash` | VARCHAR(64) | N | 생성에 쓴 장소 원문의 SHA-256 |
+| `source_hash` | VARCHAR(64) | N | 생성 입력(모델 + 완성된 프롬프트 + 장소 원문)의 SHA-256. 장소 원문이나 프롬프트가 바뀌면 다시 생성한다 |
 
 - 유니크: (`place_id`, `nationality`, `language`). 같은 언어라도 국적이 다르면 내용이 다르다.
 - 행마다 따로 생성한다. 쉬운 한국어를 언어와 무관하게 재사용하려면 테이블을 나눠야 한다.
