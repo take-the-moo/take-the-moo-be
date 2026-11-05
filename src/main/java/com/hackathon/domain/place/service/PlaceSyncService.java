@@ -2,6 +2,7 @@ package com.hackathon.domain.place.service;
 
 import com.hackathon.domain.place.client.TourApiClient;
 import com.hackathon.domain.place.client.TourPlaceItem;
+import com.hackathon.domain.place.client.TourText;
 import com.hackathon.domain.place.curation.PlaceCurationRegistry;
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.entity.PlaceStatus;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
  * 3. ACTIVE 장소 중 개요가 없거나 modifiedtime이 바뀐 것만 개요를 받는다
  *    (서대문구 쇼핑 타입은 백화점 매장·체인점이 대부분이라 전부 받으면 호출만 늘어난다)
  * 4. 이번 목록에 없는 기존 장소는 INACTIVE (삭제하지 않는다)
+ * 개요의 HTML 태그·엔티티와 http 이미지 주소는 저장 전에 정제한다 (TourText)
  * 외부 호출이 길어 트랜잭션은 걸지 않는다 (장소마다 save가 각각 커밋된다).
  */
 @Slf4j
@@ -68,7 +70,7 @@ public class PlaceSyncService {
             boolean changed = place.needsOverview(item.modifiedtime());
             place.updateTourInfo(item.contenttypeid(), item.title(), item.fullAddress(),
                     Double.parseDouble(item.mapy()), Double.parseDouble(item.mapx()),
-                    blankToNull(item.firstimage()), item.modifiedtime());
+                    TourText.toHttps(item.firstimage()), item.modifiedtime());
             place.applyRules(curationRegistry.find(item.contentid()).orElse(null),
                     autoActiveTypeIds.contains(item.contenttypeid()),
                     curationRegistry.isExcluded(item.contentid()));
@@ -76,12 +78,15 @@ public class PlaceSyncService {
 
             if (changed && place.getStatus() == PlaceStatus.ACTIVE) {
                 try {
-                    client.fetchOverview(item.contentid()).ifPresent(place::updateOverview);
+                    client.fetchOverview(item.contentid()).map(TourText::cleanOverview).ifPresent(place::updateOverview);
                     overviews++;
                 } catch (ExternalApiException e) {
                     // 개요 하나 실패로 전체를 멈추지 않는다. 다음 동기화 때 다시 받는다
                     log.warn("장소 개요 조회 실패: contentId={}, {}", item.contentid(), e.getDetail());
                 }
+            } else if (place.getOverview() != null) {
+                // 정제 전에 저장된 개요도 다시 받지 않고 정리한다 (이미 깨끗하면 그대로)
+                place.updateOverview(TourText.cleanOverview(place.getOverview()));
             }
             placeRepository.save(place);
         }
@@ -103,9 +108,5 @@ public class PlaceSyncService {
             }
         }
         return count;
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value;
     }
 }
