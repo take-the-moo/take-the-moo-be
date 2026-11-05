@@ -7,6 +7,7 @@ Java 25 · Spring Boot 4.1 · Spring AI 2.0 (Anthropic) · DB 없음.
 
 ```bash
 bash scripts/setup-hooks.sh                  # clone 후 1회 (git 훅)
+docker compose up -d mysql                   # DB (localhost:3307 / hackathon / hackathon)
 LLM_MOCK=true ./gradlew bootRun              # 목 모드 — API 키 없이 고정 응답
 cp src/main/resources/application-secret.yml.example src/main/resources/application-secret.yml
 ./gradlew bootRun                            # 실제 호출 — application-secret.yml에 키 기입 (gitignore 대상)
@@ -15,6 +16,18 @@ cp src/main/resources/application-secret.yml.example src/main/resources/applicat
 - JDK 25가 없으면 Gradle이 첫 빌드 때 자동으로 내려받는다 (실행용 JDK는 17 이상이면 된다)
 - Swagger UI: http://localhost:8080/swagger-ui.html
 - 프론트용 명세: [docs/api.md](docs/api.md)
+
+### Docker
+
+```bash
+LLM_MOCK=true docker compose up -d --build   # 목 모드
+docker compose up -d --build                 # 실제 호출 — 키는 application-secret.yml 또는 셸/.env의 ANTHROPIC_API_KEY
+docker compose down
+```
+
+- `application-secret.yml`은 이미지에 넣지 않고(`.dockerignore`) 실행 시 마운트해 읽는다. 파일을 고친 뒤에는 `docker compose restart`로 반영한다
+- `api`는 `mysql`이 healthy가 된 뒤 뜬다. DB 데이터는 `mysql-data` 볼륨에 남고, 지우려면 `docker compose down -v`
+- 환경변수가 yml보다 우선하므로 셸에 `LLM_MOCK`가 남아 있으면 secret 파일의 `llm.mock`이 무시된다
 
 ### 목 모드
 
@@ -66,5 +79,7 @@ src/main/resources/{application.yml, prompts.yml}
 |---|---|---|
 | `spring.ai.anthropic.api-key` | (없음) | Anthropic API 키 — `application-secret.yml`(gitignore) 또는 환경변수 `ANTHROPIC_API_KEY` |
 | `LLM_MOCK` / `llm.mock` | `false` | 목 모드 |
+| `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | `jdbc:mysql://localhost:3307/hackathon` / `hackathon` / `hackathon` | MySQL 접속 (compose 개발용 계정) |
+| `DB_PORT` | `3307` | compose가 여는 MySQL 호스트 포트 |
 | `llm.timeout.connect` / `read` / `request` | 5s / 60s / 120s | LLM 호출 연결 / 응답 대기 / 전체 상한 |
 | `llm.max-retries` | 1 | SDK 재시도 횟수 |

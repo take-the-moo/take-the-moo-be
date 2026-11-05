@@ -1,0 +1,5 @@
+# 테스트 전용 덮어쓰기. classpath:config/application.yml은 main의 application.yml 위에 병합된다
+spring:
+  datasource:
+    # 계정은 main의 기본값을 그대로 쓴다 (인메모리 H2는 처음 붙는 계정으로 생성된다)
+    url: jdbc:h2:mem:test;MODE=MySQL;DATABASE_TO_LOWER=TRUE

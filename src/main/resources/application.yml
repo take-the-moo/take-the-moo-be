@@ -19,6 +19,16 @@ spring:
       # 이미지 5MB 제한은 컨트롤러 검증(@ImageFile)이 422로 응답한다. 여기는 그보다 큰 업로드를 막는 바깥 한도
       max-file-size: 10MB
       max-request-size: 11MB
+  datasource:
+    # 로컬 bootRun은 `docker compose up -d mysql`로 띄운 DB에 붙는다. 기본값은 compose의 개발용 계정
+    url: ${DB_URL:jdbc:mysql://localhost:3307/hackathon}
+    username: ${DB_USERNAME:hackathon}
+    password: ${DB_PASSWORD:hackathon}
+  jpa:
+    hibernate:
+      # 해커톤용 — 엔티티 변경을 스키마에 바로 반영한다 (데이터 보존이 중요해지면 validate로)
+      ddl-auto: update
+    open-in-view: false
   ai:
     anthropic:
       # 키는 application-secret.yml(우선) 또는 환경변수로 주입한다. 값을 이 파일에 직접 쓰지 않는다 (pre-commit이 차단)

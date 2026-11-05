@@ -1,0 +1,44 @@
+services:
+  api:
+    build: .
+    image: hackathon-llm
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/app/config/application-secret.yml
+      - DB_URL=jdbc:mysql://mysql:3306/hackathon
+      # 값 없이 이름만 쓰면 셸/.env에 있을 때만 넘긴다. 기본값을 넣으면 환경변수가 yml보다 우선해서 secret 파일 값을 덮는다
+      - ANTHROPIC_API_KEY
+      - LLM_MOCK
+    volumes:
+      # 파일 단위로 마운트하면 파일이 없을 때 Docker가 빈 디렉터리를 만들어 버려서 디렉터리째 마운트한다
+      - ./src/main/resources:/app/config:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    ports:
+      # 호스트 3306은 다른 프로젝트와 겹치기 쉬워 3307로 연다 (컨테이너끼리는 mysql:3306)
+      - "${DB_PORT:-3307}:3306"
+    environment:
+      # 로컬 개발용 계정. application.yml의 DB_* 기본값과 맞춘다
+      MYSQL_DATABASE: hackathon
+      MYSQL_USER: hackathon
+      MYSQL_PASSWORD: hackathon
+      MYSQL_ROOT_PASSWORD: root
+      TZ: Asia/Seoul
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uhackathon", "-phackathon"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
