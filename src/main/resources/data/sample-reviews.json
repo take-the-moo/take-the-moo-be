@@ -1,0 +1,36 @@
+{
+  "_guide": [
+    "샘플 한걸음 (F6). 지도·한걸음 목록이 비어 보이지 않게 서버를 켤 때 넣는다. 장소별 3~5개 권장",
+    "contentId: 장소의 TourAPI contentId (place.content_id). name은 참고용이라 저장하지 않는다",
+    "nationality: 쓴 사람 국적 VN·CN·JP·MN·UZ·US·OTHER. 국적마다 샘플 사용자가 하나씩 만들어진다 (app_user.sample=true)",
+    "language: 실제로 쓴 언어 KO·EN·VI·ZH·JA·MN·UZ. 국적과 달라도 된다 (예: 베트남 학생이 한국어로 씀)",
+    "content: 200자 이하. 비워 두면 건너뛴다. 장소에 대한 사실(연도·인물)은 넣지 말고 감상·팁 위주로 쓴다",
+    "  링크·이메일·전화번호·욕설·특정 나라 비하는 쓰지 않는다 (샘플은 검사를 거치지 않고 들어간다)",
+    "daysAgo: 며칠 전에 쓴 것으로 보일지 (0~30). 목록은 최신순이다",
+    "이미 샘플 한걸음이 있는 장소는 다시 넣지 않는다. 내용을 고친 뒤 다시 넣으려면 그 장소의 샘플 한걸음을 지우고 서버를 다시 켠다"
+  ],
+  "reviews": [
+    {"contentId": "127425", "name": "독립문", "nationality": "VN", "language": "KO", "content": "아침 일찍 오면 사람이 없어서 사진 찍기 좋아요!", "daysAgo": 2},
+    {"contentId": "127425", "name": "독립문", "nationality": "JP", "language": "JA", "content": "門が思ったより小さくてびっくりしました。でも歴史を感じます", "daysAgo": 5},
+    {"contentId": "127425", "name": "독립문", "nationality": "CN", "language": "VI", "content": "Cổng rất đẹp, nên ghé vào buổi chiều", "daysAgo": 9},
+    {"contentId": "127425", "name": "독립문", "nationality": "MN", "language": "MN", "content": "Орой гэрэл асахад ирвэл зураг их гоё гардаг.", "daysAgo": 12},
+
+    {"contentId": "130152", "name": "서대문형무소역사관", "nationality": "VN", "language": "VI", "content": "Không khí rất trang nghiêm. Nên dành ít nhất một tiếng để xem kỹ.", "daysAgo": 1},
+    {"contentId": "130152", "name": "서대문형무소역사관", "nationality": "CN", "language": "ZH", "content": "展览很用心，让人静下心来思考。建议提前查好开放时间。", "daysAgo": 4},
+    {"contentId": "130152", "name": "서대문형무소역사관", "nationality": "JP", "language": "JA", "content": "静かに見学できました。説明が丁寧で、平和について考える時間になりました", "daysAgo": 7},
+    {"contentId": "130152", "name": "서대문형무소역사관", "nationality": "US", "language": "EN", "content": "Quiet and moving. Give yourself at least an hour, and wear comfortable shoes.", "daysAgo": 13},
+
+    {"contentId": "2789102", "name": "독립문영천시장", "nationality": "UZ", "language": "UZ", "content": "Bozor juda qiziqarli! Tteokbokki arzon va mazali.", "daysAgo": 1},
+    {"contentId": "2789102", "name": "독립문영천시장", "nationality": "VN", "language": "VI", "content": "Chợ nhỏ nhưng đồ ăn ngon, giá rẻ. Các cô bán hàng rất thân thiện.", "daysAgo": 3},
+    {"contentId": "2789102", "name": "독립문영천시장", "nationality": "CN", "language": "KO", "content": "꽈배기가 정말 맛있어요! 시장 분들이 다 친절하세요", "daysAgo": 6},
+    {"contentId": "2789102", "name": "독립문영천시장", "nationality": "JP", "language": "JA", "content": "お餅屋さんがたくさんあって楽しい。現金があると便利です", "daysAgo": 10},
+
+    {"contentId": "128622", "name": "서대문독립공원", "nationality": "MN", "language": "MN", "content": "Цэцэрлэгт хүрээлэн их цэвэрхэн, амрахад тохиромжтой.", "daysAgo": 2},
+    {"contentId": "128622", "name": "서대문독립공원", "nationality": "US", "language": "EN", "content": "Nice park for a slow walk after class. Lots of benches and shade.", "daysAgo": 8},
+    {"contentId": "128622", "name": "서대문독립공원", "nationality": "VN", "language": "KO", "content": "산책하기 좋아요. 가을에 단풍이 정말 예뻐요", "daysAgo": 15},
+
+    {"contentId": "2661502", "name": "서대문 안산(안산자락길)", "nationality": "CN", "language": "ZH", "content": "步道很平缓，走起来很轻松。秋天的风景特别美！", "daysAgo": 1},
+    {"contentId": "2661502", "name": "서대문 안산(안산자락길)", "nationality": "UZ", "language": "KO", "content": "길이 평평해서 걷기 편해요. 위에서 보는 경치가 최고예요", "daysAgo": 5},
+    {"contentId": "2661502", "name": "서대문 안산(안산자락길)", "nationality": "JP", "language": "JA", "content": "森の中を歩けて気持ちいい。ゆっくり一周するのがおすすめです", "daysAgo": 11}
+  ]
+}

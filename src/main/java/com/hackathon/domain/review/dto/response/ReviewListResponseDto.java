@@ -38,12 +38,15 @@ public record ReviewListResponseDto(
             Nationality nationality,
 
             @Schema(description = "작성 날짜 (서울)", example = "2026-11-07")
-            LocalDate writtenDate
+            LocalDate writtenDate,
+
+            @Schema(description = "true면 시연용 샘플 한걸음 (실제 사용자가 쓴 글이 아니다)", example = "false")
+            boolean sample
     ) {
 
-        public static Item of(Review review, String translatedContent, Nationality nationality) {
+        public static Item of(Review review, String translatedContent, Nationality nationality, boolean sample) {
             return new Item(review.getId(), review.getContent(), review.getLanguage(), translatedContent, nationality,
-                    review.getCreatedAt().toLocalDate());
+                    review.getCreatedAt().toLocalDate(), sample);
         }
     }
 }
