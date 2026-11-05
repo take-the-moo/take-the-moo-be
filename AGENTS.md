@@ -59,10 +59,11 @@ com.hackathon
 │   ├── entity/      BaseTimeEntity — createdAt·updatedAt 자동 (서울 시간)
 │   ├── util/        SeoulTime(오늘·지금, Asia/Seoul), GeoUtils(거리 m)
 │   ├── external/    ExternalHttp(외부 GET+JSON, 키 인코딩·XML 오류 처리), ExternalApiException, PublicDataHeader
+│   ├── storage/     FileStorage(save·load·delete) — 사진·엽서 파일. 지금은 LocalFileStorage(app.storage.dir)
 │   ├── response/    ApiResult, ApiResponse, SuccessType, ErrorCode, CommonErrorType
 │   └── exception/   DomainException, GlobalExceptionHandler
 └── domain/
-    ├── llm/         LlmClient(ChatClient 호출은 여기만), PromptRegistry, 범용 샘플 API(/api/chat 등)
+    ├── llm/         LlmClient(ChatClient 호출은 여기만), ImageClient(OpenAI 이미지 호출은 여기만), PromptRegistry, 범용 샘플 API(/api/chat 등)
     ├── place/       Place·Station 엔티티, TourApiClient·StationApiClient, PlaceSyncService·StationSyncService,
     │                DataSyncScheduler(시작 시·매일 동기화), curation/PlaceCurationRegistry(팀 보강 파일)
     ├── weather/     WeatherService.resolve(시뮬레이션 날씨) / current() — 10분 캐시, 실패해도 예외 없음
@@ -152,13 +153,14 @@ com.hackathon
 - 새 AI 기능은 한 세트로 추가한다: **promptKey + 요청/응답 DTO + 서비스 메서드 + 엔드포인트 + mock 응답 + 테스트 + docs/api.md** → `/ai-feature <설명>`
 - 프롬프트에 언어·국적을 넣을 때는 `Language.getKoreanName()`, `Nationality.getKoreanName()`을 변수로 넘긴다
 - Spring AI는 2.0 API 기준 (옵션은 불변 builder, `.mutate()`, Jackson 3 = `tools.jackson`). 1.x 예제를 그대로 쓰지 않는다
-- 엽서 이미지는 OpenAI 이미지 API. 키는 `spring.ai.openai.api-key`(환경변수 `OPENAI_API_KEY`). 키가 없거나 목 모드면 대체 이미지로 동작해야 한다
-  - OpenAI 스타터를 추가하면 ChatModel이 둘이 되어 `ChatClient.Builder` 자동 설정이 깨질 수 있다. `spring.ai.model.chat=anthropic`, `spring.ai.model.image=openai`로 역할을 고정한다
+- 엽서 이미지는 OpenAI 이미지 편집 API(사진 → 다시 그린 그림)를 `ImageClient.redraw()`로 부른다. 키는 `spring.ai.openai.api-key`(환경변수 `OPENAI_API_KEY`). 프롬프트는 `prompts.yml`의 `postcard-image`(model + system만)
+  - 목 모드·키 없음·실패면 `Optional.empty()` → 호출하는 쪽이 원본 사진으로 대체한다
+  - Spring AI OpenAI 스타터는 넣지 않는다. ChatModel이 둘이 되어 Claude(`ChatClient.Builder`) 자동 설정이 깨질 수 있다
 
 ## 외부 설정 (`app.*`, `AppProperties`)
 | 키 | 용도 | 없을 때 |
 |---|---|---|
-| `app.storage.dir` | 사진·엽서 저장 디렉터리 (기본 `./uploads`) | 기본값 |
+| `app.storage.dir` | 사진·엽서 저장 디렉터리 (기본 `./uploads`). 도커에서는 `/app/uploads` = compose의 `uploads-data` 볼륨. 파일은 `FileStorage`로만 다루고 DB에는 저장된 이름만 둔다 | 기본값 |
 | `app.weather.kma-service-key` | 기상청 초단기실황 (공공데이터포털 Decoding 키) | 날씨 시뮬레이션/기본값 |
 | `app.tour.service-key` | TourAPI 국문 관광정보 (공공데이터포털 Decoding 키) | 동기화 건너뜀, DB 데이터 유지 |
 | `app.station.api-key` | T Data 지하철역 좌표정보 인증키 | 동기화 건너뜀, DB 데이터 유지 |
