@@ -450,6 +450,98 @@ F6 한걸음 작성. 장소에 한 줄 후기를 남긴다. 저장 전에 두 �
 
 ---
 
+### POST /api/postcards
+
+F7 회고 엽서 생성 시작. 사진 1장 + 한 문장을 템플릿에 넣은 JPEG 한 장을 만든다. **비동기**라 바로 `PENDING`으로 돌려주고, 프론트는 `GET /api/postcards/{postcardId}`로 1~2초마다 상태를 확인한다.
+
+- 사진은 원본 그대로 쓴다 (휴대폰 사진의 회전 정보는 반영한다). 사진 칸 비율에 맞춰 가운데를 자른다
+- 제목(사용자 언어로 "날짜, 장소")은 AI가 쓰고, 제목과 한 문장은 서버가 템플릿 글꼴로 쓴다. 목 모드·AI 실패면 기본 제목(언어별 날짜 · 한국어 장소)
+- 보통 2~3초 안에 끝난다
+- 제목의 장소는 사진을 올릴 때 준 `placeId`. 없으면 "서대문"
+
+요청 (`Content-Type: application/json`)
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| userId | string | O | `POST /api/users`가 돌려준 userId |
+| photoId | string | O | `POST /api/photos`로 올린 **내** 사진 |
+| comment | string | O | 엽서에 쓸 한 문장, 100자 이하 |
+| template | string | - | 템플릿. 지금은 `BASIC` 하나 (비우면 `BASIC`) |
+
+```json
+{ "userId": "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c", "photoId": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+  "comment": "독립문 앞에서 처음으로 한국의 가을을 느꼈다" }
+```
+
+응답 201
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 201,
+  "message": "성공적으로 생성하였습니다.",
+  "data": {
+    "postcardId": "c7d8e9f0-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+    "status": "PENDING",
+    "template": "BASIC",
+    "imageUrl": null,
+    "downloadUrl": null,
+    "errorCode": null
+  }
+}
+```
+
+오류: 404 `USER_NOT_FOUND`, 403 `PHOTO_FORBIDDEN`(남의 사진), 404 `PHOTO_NOT_FOUND`, 422 `COMMON_VALIDATION_FAILED`(빈 한 문장, 100자 초과, photoId 누락), 400 `COMMON_INVALID_REQUEST`(없는 템플릿)
+
+---
+
+### GET /api/postcards/{postcardId}
+
+엽서 생성 상태. `data` 형식은 `POST /api/postcards`와 같다.
+
+| status | 뜻 | 프론트 |
+|---|---|---|
+| `PENDING` | 대기 중 | 계속 확인 |
+| `PROCESSING` | 만드는 중 | 계속 확인 |
+| `COMPLETED` | 완성. `imageUrl`(보기)·`downloadUrl`(내려받기)이 온다 | 이미지 표시 |
+| `FAILED` | 실패. `errorCode`에 사유 | 다시 만들기 안내 |
+
+`errorCode`: `RENDER_FAILED`(사진을 읽지 못함 — 깨진 파일 등), `PHOTO_FILE_MISSING`(사진 파일이 없음), `INTERRUPTED`(만드는 중 서버가 다시 켜짐)
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": {
+    "postcardId": "c7d8e9f0-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+    "status": "COMPLETED",
+    "template": "BASIC",
+    "imageUrl": "/api/postcards/c7d8e9f0-1a2b-3c4d-5e6f-7a8b9c0d1e2f/image",
+    "downloadUrl": "/api/postcards/c7d8e9f0-1a2b-3c4d-5e6f-7a8b9c0d1e2f/image?download=true",
+    "errorCode": null
+  }
+}
+```
+
+오류: 404 `POSTCARD_NOT_FOUND`
+
+---
+
+### GET /api/postcards/{postcardId}/image
+
+완성된 엽서 이미지. JSON이 아니라 JPEG 바이트를 그대로 준다 (1200×1800, 템플릿에 따라 다름).
+
+| 쿼리 | 설명 |
+|---|---|
+| download | `true`면 `Content-Disposition: attachment` — 브라우저가 파일(`seodaemun-postcard.jpg`)로 저장한다. 없으면 `inline`(화면에 표시) |
+
+- 내려받기 버튼은 `<a href="{서버}/api/postcards/{id}/image?download=true">`면 된다. 아이폰에서 사진 앱에 넣으려면 이미지를 길게 눌러 저장하거나 `navigator.share`로 공유한다
+
+오류(JSON): 409 `POSTCARD_NOT_READY`(아직 만드는 중이거나 실패), 404 `POSTCARD_NOT_FOUND`
+
+---
+
 ### GET /api/health
 
 ```json
@@ -474,6 +566,8 @@ F6 한걸음 작성. 장소에 한 줄 후기를 남긴다. 저장 전에 두 �
 | 404 | `PLACE_NOT_FOUND` | 없거나 노출하지 않는 장소 |
 | 403 | `PHOTO_FORBIDDEN` | 다른 사용자의 사진을 한걸음·엽서에 쓰려 함 |
 | 404 | `PHOTO_NOT_FOUND` | 없는 photoId |
+| 404 | `POSTCARD_NOT_FOUND` | 없는 postcardId |
+| 409 | `POSTCARD_NOT_READY` | 완성 전(또는 실패한) 엽서의 이미지를 요청함 |
 | 404 | `STORAGE_NOT_FOUND` | 파일 기록은 있는데 저장소에 파일이 없음 |
 | 405 | `COMMON_METHOD_NOT_ALLOWED` | 지원하지 않는 HTTP 메서드 |
 | 415 | `COMMON_UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
