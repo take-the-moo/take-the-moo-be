@@ -160,7 +160,7 @@ com.hackathon
 - 새 AI 기능은 한 세트로 추가한다: **promptKey + 요청/응답 DTO + 서비스 메서드 + 엔드포인트 + mock 응답 + 테스트 + docs/api.md** → `/ai-feature <설명>`
 - 프롬프트에 언어·국적을 넣을 때는 `Language.getKoreanName()`, `Nationality.getKoreanName()`을 변수로 넘긴다
 - Spring AI는 2.0 API 기준 (옵션은 불변 builder, `.mutate()`, Jackson 3 = `tools.jackson`). 1.x 예제를 그대로 쓰지 않는다
-- 엽서(F7)는 원본 사진을 그대로 쓴다 (AI로 다시 그리지 않는다). AI는 제목 한 줄(`postcard-title`)만 쓴다. 글씨는 `PostcardRenderer`가 템플릿에 쓴다 — 템플릿 배치·배경·글꼴은 `resources/postcard/templates.json` (템플릿을 늘리면 `PostcardTemplate` 상수도 추가). 도커 이미지는 한·중·일 글꼴(`NotoSansCJK-Regular`)을 설치한다
+- 엽서(F7)는 원본 사진을 그대로 쓴다 (AI로 다시 그리지 않는다). AI는 제목 한 줄(`postcard-title`)만 쓴다. 글씨는 `PostcardRenderer`가 템플릿에 쓴다 — 템플릿 배치·배경·글꼴은 `resources/postcard/templates.json` (템플릿을 늘리면 `PostcardTemplate` 상수도 추가). 배경 PNG는 사진 위에 덮으므로 사진 칸을 투명하게 뚫어 둔다. 글씨 글꼴은 `templates.json`의 `fonts`(언어별 손글씨체, OFL, `resources/postcard/fonts`)에서 문장마다 모든 글자가 있는 첫 글꼴을 쓰고, 없으면 도커에 설치한 한·중·일 글꼴(`NotoSansCJK-Regular`)로 쓴다
 
 ## 외부 설정 (`app.*`, `AppProperties`)
 | 키 | 용도 | 없을 때 |
