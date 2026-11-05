@@ -15,6 +15,8 @@ services:
       - APP_STATION_API_KEY
       # 로그인 JWT 서명 키. EC2 배포는 서버의 ~/app/.env에 만들어 둔다 (scripts/deploy-ec2.sh)
       - APP_AUTH_JWT_SECRET
+      # 시연 계정 비밀번호. 없으면 시연 계정을 만들지 않는다
+      - APP_DEMO_PASSWORD
       # 컨테이너 기본 시간대는 UTC. 코드는 SeoulTime을 쓰지만 로그 시각도 서울로 맞춘다
       - TZ=Asia/Seoul
     volumes:

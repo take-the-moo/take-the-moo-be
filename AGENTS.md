@@ -37,6 +37,7 @@ Swagger: http://localhost:8080/swagger-ui.html · 프론트 명세: `docs/api.md
 | F5 방문 도장·기록 | `domain/visit` | `POST /api/visits`, `GET /api/users/{userId}/visits` | - |
 | F6 흔적 지도·한걸음 | `domain/review`, `domain/visit` | `GET /api/map/pins`, `GET·POST /api/places/{placeId}/reviews` | 한걸음 번역, 욕설·광고 필터 |
 | F7 회고 엽서 | `domain/postcard` | `POST /api/postcards`, `GET /api/postcards/{postcardId}`, `GET /api/postcards/{postcardId}/image` | 제목 한 줄을 사용자 언어로 쓴다 (날짜·장소). 원본 사진 + 제목 + 한 문장은 서버가 템플릿에 합성한다 |
+| F8 나의 발자취 | `domain/journey` (장소 사진은 `domain/place`) | `GET /api/users/{userId}/journey`, `GET /api/users/{userId}/journey/story`, `GET /api/places/{placeId}/image` | 사용자의 기록으로 모국어 + 쉬운 한국어 회고 글을 쓴다. 입력에 있는 사실만 쓴다 |
 | 장소·역 데이터 | `domain/place` | (TourAPI 스케줄 동기화 + 팀 보강 데이터) | - |
 | 공통 | `global`, `domain/llm` | `GET /api/health` | - |
 
@@ -174,11 +175,12 @@ com.hackathon
 | `app.tour.l-dong-regn-cd` / `l-dong-signgu-cd` | 법정동 코드 서울 / 서대문구 (기본 `11` / `410`). 예전 `areaCode`는 쓰지 않는다 | - |
 | `app.demo.default-latitude` / `default-longitude` / `default-name` | 위치·역이 없을 때 기준 위치 (기본 명지대 인문캠퍼스 `37.5803, 126.9233` — 발표장은 GPS가 안 잡힌다). 좌표를 비우면 `default-station`을 쓴다 | 기본값 |
 | `app.demo.default-station` | 기본 좌표가 비었을 때 기준 역, "역 선택" 목록의 기본 역 (기본 `독립문`, T Data 역 한글명) | 기본값 |
+| `app.demo.password` | 시연 계정 `demo_linh`의 비밀번호 (환경변수 `APP_DEMO_PASSWORD`) | 시연 계정을 만들지 않는다 |
 | `app.auth.jwt-secret` | 로그인 토큰(JWT) 서명 키, 32바이트 이상 (환경변수 `APP_AUTH_JWT_SECRET`). **배포 환경에서는 꼭 넣는다** | 서버를 켤 때 임시 키 — 재시작하면 모두 다시 로그인 |
 | `app.auth.token-ttl` / `enforce-token` | 토큰 유효 기간 / userId와 토큰 사용자 일치 확인 (기본 `30d` / `true`, 테스트만 `false`) | - |
 | `app.visit.stamp-radius-meters` | 방문 도장을 줄 장소 반경(미터, 기본 `200`) | 기본값 |
 
-키는 `application.yml`(gitignore) 또는 환경변수(`APP_WEATHER_KMA_SERVICE_KEY`, `APP_TOUR_SERVICE_KEY`, `APP_STATION_API_KEY`, `APP_AUTH_JWT_SECRET`)로 넣는다. AI 키는 `spring.ai.anthropic.api-key`(`ANTHROPIC_API_KEY`), `spring.ai.openai.api-key`(`OPENAI_API_KEY`).
+키는 `application.yml`(gitignore) 또는 환경변수(`APP_WEATHER_KMA_SERVICE_KEY`, `APP_TOUR_SERVICE_KEY`, `APP_STATION_API_KEY`, `APP_AUTH_JWT_SECRET`, `APP_DEMO_PASSWORD`)로 넣는다. AI 키는 `spring.ai.anthropic.api-key`(`ANTHROPIC_API_KEY`), `spring.ai.openai.api-key`(`OPENAI_API_KEY`).
 
 ## 속도 규칙
 - 계획 승인 루프 없이 바로 구현한다

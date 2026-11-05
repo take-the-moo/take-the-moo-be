@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -50,6 +51,35 @@ public class ExternalHttp {
                     apiName + " 호출 실패: " + e.getClass().getSimpleName());
         }
         return parse(apiName, body);
+    }
+
+    /**
+     * 외부 이미지를 받는다 (GET). 이미지가 아니거나 maxBytes를 넘으면 INVALID_RESPONSE, 받지 못하면 CALL_FAILED.
+     * 크기를 끝까지 읽지 않고 maxBytes를 넘는 순간 멈춘다.
+     */
+    public ExternalImage getImage(String apiName, String url, int maxBytes) {
+        try {
+            return restClient.get().uri(URI.create(url)).exchange((request, response) -> {
+                if (!response.getStatusCode().is2xxSuccessful()) {
+                    throw new ExternalApiException(ExternalApiErrorType.CALL_FAILED,
+                            apiName + " 호출 실패: status=" + response.getStatusCode().value());
+                }
+                MediaType contentType = response.getHeaders().getContentType();
+                if (contentType == null || !"image".equalsIgnoreCase(contentType.getType())) {
+                    throw new ExternalApiException(ExternalApiErrorType.INVALID_RESPONSE,
+                            apiName + " 이미지가 아닌 응답: " + contentType);
+                }
+                byte[] content = response.getBody().readNBytes(maxBytes + 1);
+                if (content.length > maxBytes) {
+                    throw new ExternalApiException(ExternalApiErrorType.INVALID_RESPONSE,
+                            apiName + " 이미지가 " + maxBytes + "바이트를 넘는다");
+                }
+                return new ExternalImage(content, contentType.toString());
+            });
+        } catch (RestClientException | IllegalArgumentException e) {
+            throw new ExternalApiException(ExternalApiErrorType.CALL_FAILED,
+                    apiName + " 호출 실패: " + e.getClass().getSimpleName());
+        }
     }
 
     JsonNode parse(String apiName, String body) {

@@ -33,10 +33,11 @@ docker compose down
 
 ### AWS 배포
 
-EC2 한 대에서 `compose.yml`을 그대로 띄운다. 지금 서버는 `http://3.36.178.51:8080`. 자세한 건 [docs/deploy.md](docs/deploy.md).
+EC2 한 대에서 `compose.yml`에 Caddy(HTTPS)와 프론트(`compose.prod.yml`)를 얹어 띄운다. 지금 서버는 **`https://3-36-178-51.sslip.io`** (앱 화면 + `/api`). 자세한 건 [docs/deploy.md](docs/deploy.md).
 
 ```bash
-scripts/deploy-ec2.sh ubuntu@3.36.178.51 -i ~/.ssh/take-the-moo-key.pem   # 배포·재배포
+scripts/deploy-ec2.sh ubuntu@3.36.178.51 -i ~/.ssh/take-the-moo-key.pem                                   # 백엔드 배포·재배포
+FE_DIR=../take-the-moo-fe/storywalk-fe scripts/deploy-ec2.sh ubuntu@3.36.178.51 -i ~/.ssh/take-the-moo-key.pem   # 프론트도 같이
 ```
 
 ### 목 모드
@@ -75,7 +76,7 @@ src/main/java/com/hackathon
 ├── global/{config, common, entity, util, response, exception}   설정·공통 코드값·BaseTimeEntity·ApiResult·예외 처리
 └── domain/
     ├── llm/{controller, service, dto, prompt, exception}       LlmClient·PromptRegistry·범용 샘플 API
-    └── {user, recommend, scene, place, photo, visit, review, postcard}/   기능별 도메인 (AGENTS.md 참고)
+    └── {user, recommend, scene, place, photo, visit, review, postcard, journey}/   기능별 도메인 (AGENTS.md 참고)
 src/main/resources/{application.yml, prompts.yml}
 ```
 
@@ -102,4 +103,5 @@ src/main/resources/{application.yml, prompts.yml}
 | `app.station.api-key` / `APP_STATION_API_KEY` | (없음) | T Data 지하철역 좌표정보 인증키. 서버 시작 시(비어 있으면)와 장소 동기화 때 역을 DB로 동기화 |
 | `app.demo.default-latitude` / `default-longitude` / `default-name` | `37.5803` / `126.9233` / `명지대 인문캠퍼스` | 위치·역을 못 받았을 때 기준 위치. 좌표를 비우면 `default-station`을 쓴다 |
 | `app.demo.default-station` | `독립문` | 기본 좌표가 비었을 때 기준 역, "역 선택" 목록의 기본 역 |
+| `app.demo.password` / `APP_DEMO_PASSWORD` | (없음) | 시연 계정 `demo_linh`의 비밀번호. 없으면 시연 계정을 만들지 않는다 |
 | `app.visit.stamp-radius-meters` | `200` | 방문 도장을 줄 장소 반경(미터) |

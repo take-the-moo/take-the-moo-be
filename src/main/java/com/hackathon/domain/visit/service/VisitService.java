@@ -47,6 +47,16 @@ public class VisitService {
         this.stampRadiusMeters = properties.visit().stampRadiusMeters();
     }
 
+    /** 시연 계정의 도장이 이미 들어갔는지 본다 */
+    public boolean hasVisits(String userId) {
+        return visitRepository.countByUserId(userId) > 0;
+    }
+
+    /** 시연 계정의 도장을 지난 날짜로 넣는다. 위치를 확인하지 않으므로 실제 사용자에게는 쓰지 않는다 */
+    public void addDemoVisit(String userId, Long placeId, LocalDate visitedDate) {
+        visitRepository.save(Visit.create(userId, placeId, visitedDate));
+    }
+
     public VisitResponseDto stamp(VisitRequestDto request) {
         UserResponseDto user = userService.getUser(request.userId());
         Place place = placeService.getActivePlace(request.placeId());

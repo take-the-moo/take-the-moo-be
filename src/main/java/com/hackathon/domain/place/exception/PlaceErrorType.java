@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 public enum PlaceErrorType implements ErrorCode {
 
     NOT_FOUND(404, "장소를 찾을 수 없습니다."),
+    IMAGE_NOT_FOUND(404, "이 장소에는 사진이 없습니다."),
     EXPLANATION_MISSING(422, "이 장소에는 아직 해설이 없습니다.");
 
     private final int httpStatusCode;

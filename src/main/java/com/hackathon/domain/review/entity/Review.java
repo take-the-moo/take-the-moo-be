@@ -23,7 +23,10 @@ import lombok.NoArgsConstructor;
  */
 @Getter
 @Entity
-@Table(indexes = @Index(name = "idx_review_place_created", columnList = "placeId, createdAt"))
+@Table(indexes = {
+        @Index(name = "idx_review_place_created", columnList = "placeId, createdAt"),
+        @Index(name = "idx_review_user_created", columnList = "userId, createdAt")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Review extends BaseTimeEntity {
 

@@ -1,0 +1,46 @@
+# EC2 배포 전용 덧붙임. compose.yml 위에 얹어 쓴다 (서버 ~/app/.env의 COMPOSE_FILE=compose.yml:compose.prod.yml)
+# 로컬 개발은 compose.yml만 쓴다
+services:
+  api:
+    environment:
+      # Caddy가 보낸 X-Forwarded-Proto를 믿어 Swagger 등이 https 주소를 쓰게 한다
+      - SERVER_FORWARD_HEADERS_STRATEGY=framework
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"     # 인증서 발급(HTTP-01)과 https로 넘기기
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - DOMAIN=${DOMAIN:?서버 ~/app/.env에 DOMAIN이 필요하다}
+    volumes:
+      # 파일 하나가 아니라 폴더를 연결한다 — rsync가 파일을 새로 바꿔 끼우면 파일 연결은 예전 내용을 계속 본다
+      - ./deploy:/etc/caddy:ro
+      - caddy-data:/data      # 인증서. 지우면 다시 발급받는다 (Let's Encrypt 발급 횟수 제한 주의)
+      - caddy-config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # 프론트(take-the-moo-fe/storywalk-fe). 서버 ~/fe에 있는 소스로 빌드한다 (scripts/deploy-ec2.sh에 FE_DIR을 주면 보낸다)
+  # 프론트를 보낸 서버만 .env에 COMPOSE_PROFILES=web이 있어 함께 뜬다
+  web:
+    profiles: ["web"]
+    build:
+      context: ../fe
+      args:
+        # NEXT_PUBLIC_*는 빌드할 때 번들에 들어간다. 바꾸면 다시 배포한다
+        NEXT_PUBLIC_USE_MOCK: "false"
+        NEXT_PUBLIC_NAVER_MAP_KEY_ID: ${FE_NAVER_MAP_KEY_ID:-}
+        NEXT_PUBLIC_DEMO_STAMP_AT_PLACE: ${FE_DEMO_STAMP_AT_PLACE:-false}
+    image: storywalk-web
+    environment:
+      - API_PROXY_TARGET=http://api:8080
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+  caddy-config:

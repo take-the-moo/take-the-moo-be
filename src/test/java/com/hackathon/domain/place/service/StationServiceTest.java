@@ -99,7 +99,8 @@ class StationServiceTest {
 
     /** app.demo.default-latitude·longitude를 비운 설정 (기본 역으로 돌아간다) */
     private AppProperties withoutDefaultCoordinates() {
-        AppProperties.Demo demo = new AppProperties.Demo(properties.demo().defaultStation(), null, null, null);
+        AppProperties.Demo demo = new AppProperties.Demo(properties.demo().defaultStation(), null, null, null,
+                properties.demo().password());
         return new AppProperties(properties.storage(), properties.weather(), properties.tour(), properties.station(),
                 demo, properties.visit(), properties.auth());
     }
