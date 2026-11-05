@@ -227,7 +227,7 @@ docker compose down -v
 | `user_id` | VARCHAR(36) | N | |
 | `photo_id` | VARCHAR(36) | N | 엽서에 쓴 사진. 요청한 사용자의 사진이어야 한다 |
 | `comment` | VARCHAR(100) | N | 사용자가 쓴 한 문장. 템플릿 글씨 칸에 맞춰 더 줄일 수 있다 |
-| `template` | ENUM | N | 템플릿 `BASIC`(임시). 나중에 2~3개. 배치·배경·글꼴은 `resources/postcard/templates.json` |
+| `template` | ENUM | N | 템플릿 `BASIC`(팀 디자인). 늘리면 2~3개. 배치·배경·글꼴은 `resources/postcard/templates.json` |
 | `status` | ENUM | N | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED` |
 | `image_name` | VARCHAR(100) | Y | 완료된 파일 이름 (`app.storage.dir`) |
 | `error_code` | VARCHAR(50) | Y | 실패 사유 |

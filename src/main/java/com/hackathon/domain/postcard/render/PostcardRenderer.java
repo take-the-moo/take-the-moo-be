@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * 템플릿 + 원본 사진 + 제목 + 한 문장 → 엽서 JPEG. 사진은 회전 정보(EXIF)대로 세운 뒤 사진 칸에 맞춰 가운데를 자른다.
+ * 그리는 순서: 배경색 → 사진 → 배경 PNG(사진 칸이 투명) → 제목·한 문장.
  */
 @Component
 @RequiredArgsConstructor
@@ -47,15 +48,15 @@ public class PostcardRenderer {
             g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
             g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-            if (loaded.background() != null) {
-                g.drawImage(loaded.background(), 0, 0, layout.width(), layout.height(), null);
-            } else {
-                g.setColor(Color.decode(layout.backgroundColor()));
-                g.fillRect(0, 0, layout.width(), layout.height());
-            }
+            g.setColor(Color.decode(layout.backgroundColor()));
+            g.fillRect(0, 0, layout.width(), layout.height());
             drawCover(g, photoImage, layout.art());
-            TextPainter.draw(g, title, layout.title(), loaded.font());
-            TextPainter.draw(g, comment, layout.comment(), loaded.font());
+            if (loaded.background() != null) {
+                // 사진 칸이 뚫린 배경을 사진 위에 덮는다 → 칸 테두리·둥근 모서리가 사진 위에 남는다
+                g.drawImage(loaded.background(), 0, 0, layout.width(), layout.height(), null);
+            }
+            TextPainter.draw(g, title, layout.title(), loaded.fonts());
+            TextPainter.draw(g, comment, layout.comment(), loaded.fonts());
         } finally {
             g.dispose();
         }

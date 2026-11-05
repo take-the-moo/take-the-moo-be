@@ -5,6 +5,6 @@ package com.hackathon.domain.postcard.entity;
  * 템플릿을 늘리면 상수와 templates.json 항목을 같이 추가한다 (빠지면 서버가 시작되지 않는다).
  */
 public enum PostcardTemplate {
-    /** 임시 기본 템플릿. 팀 템플릿이 나오면 templates.json의 배경·좌표·글꼴만 바꾼다 */
+    /** 기본 템플릿 (팀 디자인: 사진 칸 + 발자국 도장 + 밑줄 두 줄). 배경은 postcard/basic.png */
     BASIC
 }

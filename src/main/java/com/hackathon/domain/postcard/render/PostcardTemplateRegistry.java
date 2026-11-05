@@ -6,7 +6,9 @@ import java.awt.FontFormatException;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
 import org.springframework.core.io.ClassPathResource;
@@ -34,7 +36,7 @@ public class PostcardTemplateRegistry {
             if (layout == null) {
                 throw new IllegalStateException(PATH + "에 " + template + " 템플릿이 없습니다");
             }
-            templates.put(template, new Loaded(layout, background(layout), font(layout)));
+            templates.put(template, new Loaded(layout, background(layout), fonts(layout)));
         }
     }
 
@@ -42,8 +44,11 @@ public class PostcardTemplateRegistry {
         return templates.get(template);
     }
 
-    /** @param background 배경 이미지 (없으면 null) / @param font 기본 글꼴 (크기 1, 쓸 때 deriveFont) */
-    public record Loaded(PostcardLayout layout, BufferedImage background, Font font) {
+    /**
+     * @param background 배경 이미지 (없으면 null)
+     * @param fonts      글꼴 후보 (앞에서부터, 크기 1이라 쓸 때 deriveFont). 비어 있으면 SansSerif만 쓴다
+     */
+    public record Loaded(PostcardLayout layout, BufferedImage background, List<ScaledFont> fonts) {
     }
 
     record File(String _comment, Map<String, PostcardLayout> templates) {
@@ -54,16 +59,27 @@ public class PostcardTemplateRegistry {
         try (InputStream in = new ClassPathResource(layout.backgroundImage()).getInputStream()) {
             BufferedImage image = ImageIO.read(in);
             if (image == null) throw new IllegalStateException("배경 이미지를 읽지 못했습니다: " + layout.backgroundImage());
+            // 배경은 사진 위에 덮어 그린다. 사진 칸이 뚫려 있지 않으면 엽서에 사진이 안 보인다
+            PostcardLayout.Box art = layout.art();
+            int centerX = (art.x() + art.width() / 2) * image.getWidth() / layout.width();
+            int centerY = (art.y() + art.height() / 2) * image.getHeight() / layout.height();
+            if (!image.getColorModel().hasAlpha() || (image.getRGB(centerX, centerY) >>> 24) != 0) {
+                throw new IllegalStateException("배경 이미지의 사진 칸이 투명하지 않습니다: " + layout.backgroundImage());
+            }
             return image;
         }
     }
 
-    private static Font font(PostcardLayout layout) throws IOException {
-        if (layout.fontFile() == null) return new Font(Font.SANS_SERIF, Font.PLAIN, 1);
-        try (InputStream in = new ClassPathResource(layout.fontFile()).getInputStream()) {
-            return Font.createFont(Font.TRUETYPE_FONT, in);
-        } catch (FontFormatException e) {
-            throw new IllegalStateException("글꼴을 읽지 못했습니다: " + layout.fontFile(), e);
+    private static List<ScaledFont> fonts(PostcardLayout layout) throws IOException {
+        List<ScaledFont> fonts = new ArrayList<>();
+        if (layout.fonts() == null) return fonts;
+        for (PostcardLayout.FontRef ref : layout.fonts()) {
+            try (InputStream in = new ClassPathResource(ref.file()).getInputStream()) {
+                fonts.add(new ScaledFont(Font.createFont(Font.TRUETYPE_FONT, in), ref.scale() != null ? ref.scale() : 1f));
+            } catch (FontFormatException e) {
+                throw new IllegalStateException("글꼴을 읽지 못했습니다: " + ref.file(), e);
+            }
         }
+        return fonts;
     }
 }
