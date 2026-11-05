@@ -18,7 +18,7 @@ import tools.jackson.databind.JsonNode;
 
 /**
  * 기상청 단기예보 조회서비스의 초단기실황(getUltraSrtNcst). 서대문구 격자(nx, ny) 하나만 조회한다.
- * TODO(키 발급 후): 실제 응답으로 성공 코드("00")와 발표 시각 규칙을 확인한다.
+ * 2026-11 실제 응답으로 성공 코드("00")와 항목(PTY, T1H)을 확인했다.
  */
 @Component
 public class KmaWeatherClient {

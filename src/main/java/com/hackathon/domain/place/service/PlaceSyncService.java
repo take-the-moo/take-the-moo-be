@@ -2,6 +2,7 @@ package com.hackathon.domain.place.service;
 
 import com.hackathon.domain.place.client.TourApiClient;
 import com.hackathon.domain.place.client.TourPlaceItem;
+import com.hackathon.domain.place.curation.PlaceCuration;
 import com.hackathon.domain.place.curation.PlaceCurationRegistry;
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.entity.PlaceStatus;
@@ -19,7 +20,8 @@ import org.springframework.stereotype.Service;
 /**
  * TourAPI → place 테이블 동기화.
  * 1. 관광 타입별로 서대문구 목록을 전부 받는다 (하나라도 실패하면 DB를 건드리지 않고 중단)
- * 2. contentId로 upsert. TourAPI 필드만 갱신하고, modifiedtime이 바뀐 장소만 개요를 다시 받는다
+ * 2. contentId로 upsert. TourAPI 필드만 갱신하고, 보강된 장소 중 개요가 없거나 modifiedtime이 바뀐 것만 개요를 받는다
+ *    (서대문구 쇼핑 타입은 백화점 매장·체인점이 대부분이라 전부 받으면 호출만 늘어난다)
  * 3. 팀 보강 파일에 있으면 ACTIVE, 없으면 PENDING_REVIEW
  * 4. 이번 목록에 없는 기존 장소는 INACTIVE (삭제하지 않는다)
  * 외부 호출이 길어 트랜잭션은 걸지 않는다 (장소마다 save가 각각 커밋된다).
@@ -58,7 +60,8 @@ public class PlaceSyncService {
         for (TourPlaceItem item : fetched.values()) {
             Place place = placeRepository.findByContentId(item.contentid())
                     .orElseGet(() -> Place.fromTour(item.contentid()));
-            boolean needsOverview = place.needsOverview(item.modifiedtime());
+            PlaceCuration curation = curationRegistry.find(item.contentid()).orElse(null);
+            boolean needsOverview = curation != null && place.needsOverview(item.modifiedtime());
             place.updateTourInfo(item.contenttypeid(), item.title(), item.fullAddress(),
                     Double.parseDouble(item.mapy()), Double.parseDouble(item.mapx()),
                     blankToNull(item.firstimage()), item.modifiedtime());
@@ -71,7 +74,7 @@ public class PlaceSyncService {
                     log.warn("장소 개요 조회 실패: contentId={}, {}", item.contentid(), e.getDetail());
                 }
             }
-            place.applyCuration(curationRegistry.find(item.contentid()).orElse(null));
+            place.applyCuration(curation);
             placeRepository.save(place);
         }
 

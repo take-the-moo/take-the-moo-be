@@ -16,7 +16,7 @@ import tools.jackson.databind.JsonNode;
 /**
  * 한국관광공사 TourAPI 국문 관광정보(KorService2).
  * 지역은 법정동 코드(lDongRegnCd·lDongSignguCd)로 거른다.
- * TODO(키 발급 후): 실제 응답으로 필드명·성공 코드("0000")·서대문구 코드(410)를 확인한다.
+ * 2026-11 실제 응답으로 필드명·성공 코드("0000")·서대문구 코드(410)를 확인했다.
  */
 @Component
 public class TourApiClient {

@@ -28,7 +28,7 @@ public record AppProperties(
      */
     public record Weather(
             @DefaultValue("") String kmaServiceKey,
-            @DefaultValue("http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0") String kmaBaseUrl,
+            @DefaultValue("https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0") String kmaBaseUrl,
             // 서대문구 격자 좌표 (기상청 격자 변환표 기준)
             @DefaultValue("59") int nx,
             @DefaultValue("127") int ny,
