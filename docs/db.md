@@ -69,7 +69,7 @@ erDiagram
 `@Enumerated(EnumType.STRING)` + `@Column(nullable = false, length = 20)`으로 만든다. MySQL에서는 네이티브 `enum('A','B')` 컬럼이 되고, 상수를 추가하면 서버를 켤 때 자동으로 반영된다.
 
 ### 스키마를 바꾼 뒤
-`ddl-auto: update`는 서버를 켤 때 새 테이블·컬럼을 만들고 컬럼 타입도 맞춘다. 컬럼은 지우지 않으므로 쓰지 않는 컬럼이 남지만, NULL을 허용하는 컬럼이면 동작에는 문제가 없다. 컬럼 이름을 바꾸면 새 컬럼이 생길 뿐 데이터는 옮겨지지 않는다.
+`ddl-auto: update`는 서버를 켤 때 새 테이블·컬럼을 만들고 enum 상수 추가도 반영한다. 컬럼은 지우지 않으므로 쓰지 않는 컬럼이 남지만, NULL을 허용하는 컬럼이면 동작에는 문제가 없다. 컬럼 이름을 바꾸면 새 컬럼이 생길 뿐 데이터는 옮겨지지 않는다. 다른 타입 변경은 저절로 된다고 가정하지 말고 `SHOW COLUMNS`로 확인한다. 예를 들어 이미 `varchar`인 컬럼은 enum으로 바뀌지 않는다 (값 저장과 조회는 그대로 된다).
 
 스키마를 바꾸면 이 문서를 고치고 팀에 알린다. 남은 컬럼까지 지우고 싶을 때만 로컬 DB를 초기화한다. 저장된 데이터가 모두 사라지고, `place`·`station`은 키가 있으면 서버를 켤 때 다시 동기화된다.
 
@@ -104,7 +104,7 @@ docker compose down -v
 | `indoor` | BIT(1) | Y | 보강 파일 | 없으면 문화시설만 true |
 | `sensitive_history` | BIT(1) | N | 보강 파일 | 식민지 역사가 얽힌 장소 |
 | `explanation` | LONGTEXT | Y | 보강 파일 | 팀이 쓴 해설 |
-| `status` | VARCHAR(20) | N | 규칙 | `ACTIVE`, `PENDING_REVIEW`, `EXCLUDED`, `INACTIVE` |
+| `status` | ENUM | N | 규칙 | `ACTIVE`, `PENDING_REVIEW`, `EXCLUDED`, `INACTIVE` |
 
 - 추천·후보에는 `ACTIVE`만 쓴다.
 - 현장 해설 원문은 `Place.fieldExplanation()`을 쓴다.
