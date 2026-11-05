@@ -5,6 +5,7 @@ import com.hackathon.domain.llm.exception.LlmException;
 import com.hackathon.domain.llm.prompt.LlmPrompt;
 import com.hackathon.domain.llm.prompt.PromptRegistry;
 import com.hackathon.domain.llm.service.LlmClient;
+import com.hackathon.domain.photo.service.PhotoService;
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.service.PlaceService;
 import com.hackathon.domain.review.dto.request.ReviewCreateRequestDto;
@@ -53,6 +54,7 @@ public class ReviewService {
     private final ReviewTranslator reviewTranslator;
     private final UserService userService;
     private final PlaceService placeService;
+    private final PhotoService photoService;
     private final PromptRegistry promptRegistry;
     private final LlmClient llmClient;
     private final JsonMapper jsonMapper;
@@ -60,6 +62,9 @@ public class ReviewService {
     public ReviewResponseDto create(Long placeId, ReviewCreateRequestDto request) {
         UserResponseDto user = userService.getUser(request.userId());
         Place place = placeService.getActivePlace(placeId);
+        // AI 검사 전에 확인한다 (남의 사진이면 403 PHOTO_FORBIDDEN, 없으면 404 PHOTO_NOT_FOUND)
+        String photoId = request.photoId() == null || request.photoId().isBlank() ? null
+                : photoService.getOwnedPhoto(user.userId(), request.photoId().strip()).photoId();
         String content = request.content().strip();
 
         if (ReviewContentRules.isBlocked(content)) {
@@ -73,7 +78,7 @@ public class ReviewService {
         }
 
         Language language = request.language() != null ? request.language() : moderation.language();
-        Review review = reviewRepository.save(Review.create(place.getId(), user.userId(), content, language));
+        Review review = reviewRepository.save(Review.create(place.getId(), user.userId(), content, language, photoId));
         return ReviewResponseDto.of(review, user.nationality());
     }
 

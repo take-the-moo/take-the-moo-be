@@ -46,16 +46,21 @@ public class Review extends BaseTimeEntity {
     @Column(nullable = false, length = 20)
     private Language language;
 
-    /** 첨부 사진. 사진 소유자 확인(PhotoService)이 생기기 전까지는 비워 둔다 */
+    /** 첨부 사진 (선택). 작성자 본인의 사진만 붙는다 (PhotoService.getOwnedPhoto로 확인) */
     @Column(length = 36)
     private String photoId;
 
     public static Review create(Long placeId, String userId, String content, Language language) {
+        return create(placeId, userId, content, language, null);
+    }
+
+    public static Review create(Long placeId, String userId, String content, Language language, String photoId) {
         Review review = new Review();
         review.placeId = placeId;
         review.userId = userId;
         review.content = content;
         review.language = language;
+        review.photoId = photoId;
         return review;
     }
 }

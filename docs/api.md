@@ -375,7 +375,8 @@ curl 'localhost:8080/api/places/7/reviews?userId=3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7
         "language": "KO",
         "translatedContent": "Buổi sáng vắng người nên chụp ảnh rất đẹp",
         "nationality": "JP",
-        "writtenDate": "2026-11-07"
+        "writtenDate": "2026-11-07",
+        "photoUrl": "/api/photos/9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"
       },
       {
         "reviewId": 9,
@@ -383,7 +384,8 @@ curl 'localhost:8080/api/places/7/reviews?userId=3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7
         "language": "VI",
         "translatedContent": null,
         "nationality": "VN",
-        "writtenDate": "2026-11-06"
+        "writtenDate": "2026-11-06",
+        "photoUrl": null
       }
     ]
   }
@@ -394,6 +396,7 @@ curl 'localhost:8080/api/places/7/reviews?userId=3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7
 - 번역은 서버에 저장해 두므로 같은 한걸음 × 언어는 두 번째부터 바로 온다. 처음 번역할 때만 AI 호출로 1~2초 걸린다
 - 작성자 ID와 작성 시각은 내보내지 않는다. 날짜(`writtenDate`)와 국적까지만
 - 목 모드에서는 번역이 `[MOCK VI] 원문` 형태로 온다
+- `photoUrl`은 첨부 사진 주소(서버 기준 경로)다. 사진이 없으면 `null`
 
 오류: 404 `PLACE_NOT_FOUND`, 404 `USER_NOT_FOUND`(없는 userId), 400 `COMMON_INVALID_REQUEST`(없는 언어 코드, 숫자가 아닌 limit)
 
@@ -413,9 +416,11 @@ F6 한걸음 작성. 장소에 한 줄 후기를 남긴다. 저장 전에 두 �
 | userId | string | O | `POST /api/users`가 돌려준 userId |
 | content | string | O | 한 줄 후기, 200자 이하. 앞뒤 공백은 지운다 |
 | language | string | - | 실제로 쓴 언어 (`KO, EN, VI, ZH, JA, MN, UZ`). 비우면 서버가 글을 보고 정한다. **사용자 설정 언어를 그대로 넣지 않는다** |
+| photoId | string | - | 첨부 사진. `POST /api/photos`로 먼저 올리고 받은 `photoId`. **내가 올린 사진만** 붙일 수 있다 |
 
 ```json
-{ "userId": "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c", "content": "아침에 오면 한적해서 사진 찍기 좋아요", "language": "KO" }
+{ "userId": "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c", "content": "아침에 오면 한적해서 사진 찍기 좋아요", "language": "KO",
+  "photoId": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e" }
 ```
 
 응답 201
@@ -431,16 +436,17 @@ F6 한걸음 작성. 장소에 한 줄 후기를 남긴다. 저장 전에 두 �
     "content": "아침에 오면 한적해서 사진 찍기 좋아요",
     "language": "KO",
     "nationality": "VN",
-    "writtenDate": "2026-11-07"
+    "writtenDate": "2026-11-07",
+    "photoUrl": "/api/photos/9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"
   }
 }
 ```
 
 - 작성자 ID와 작성 시각은 내보내지 않는다. 날짜(`writtenDate`)와 국적까지만
-- 사진 첨부(`photoId`)는 사진 API가 생기면 추가한다
+- 사진은 AI 검사 전에 확인한다. 사진 없이 쓰면 `photoUrl`은 `null`
 - 목 모드에서는 AI 검사를 통과로 보고 링크·이메일·전화번호 규칙만 동작한다. `language`를 비우면 `KO`로 저장된다
 
-오류: 422 `REVIEW_INAPPROPRIATE`(부적절한 내용 — 다시 쓰게 한다), 404 `USER_NOT_FOUND`, 404 `PLACE_NOT_FOUND`, 422 `COMMON_VALIDATION_FAILED`(빈 글, 200자 초과), 400 `COMMON_INVALID_REQUEST`(없는 언어 코드), 502 `LLM_CALL_FAILED`, 502 `LLM_INVALID_OUTPUT`, 504 `LLM_TIMEOUT`
+오류: 422 `REVIEW_INAPPROPRIATE`(부적절한 내용 — 다시 쓰게 한다), 404 `USER_NOT_FOUND`, 404 `PLACE_NOT_FOUND`, 403 `PHOTO_FORBIDDEN`(남의 사진), 404 `PHOTO_NOT_FOUND`, 422 `COMMON_VALIDATION_FAILED`(빈 글, 200자 초과), 400 `COMMON_INVALID_REQUEST`(없는 언어 코드), 502 `LLM_CALL_FAILED`, 502 `LLM_INVALID_OUTPUT`, 504 `LLM_TIMEOUT`
 
 ---
 
