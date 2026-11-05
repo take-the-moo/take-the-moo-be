@@ -55,6 +55,17 @@ class UserServiceTest {
     }
 
     @Test
+    void 국적별_샘플_사용자를_여러_명_만들고_순서는_늘_같다() {
+        List<String> three = userService.getOrCreateSampleUsers(Nationality.OTHER, 3);
+        List<String> two = userService.getOrCreateSampleUsers(Nationality.OTHER, 2);
+
+        assertThat(three).hasSize(3).doesNotHaveDuplicates();
+        assertThat(two).as("앞에서부터 같은 사람").containsExactlyElementsOf(three.subList(0, 2));
+        assertThat(userService.getOrCreateSampleUser(Nationality.OTHER)).as("첫 번째 = 한걸음 작성자").isEqualTo(three.getFirst());
+        assertThat(userService.getAllSampleUserIds()).containsAll(three);
+    }
+
+    @Test
     void 샘플_사용자만_골라낸다() {
         String sample = userService.getOrCreateSampleUser(Nationality.MN);
         String real = userService.create(new UserCreateRequestDto(Nationality.MN, Language.MN)).userId();
