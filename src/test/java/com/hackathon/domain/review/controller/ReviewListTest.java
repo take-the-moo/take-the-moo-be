@@ -79,6 +79,7 @@ class ReviewListTest {
                     .andExpect(jsonPath("$.data.reviews[0].translatedContent").value("[MOCK VI] 아침에 오면 한적해요"))
                     .andExpect(jsonPath("$.data.reviews[0].nationality").value("VN"))
                     .andExpect(jsonPath("$.data.reviews[0].writtenDate").isString())
+                    .andExpect(jsonPath("$.data.reviews[0].sample").value(false))
                     .andExpect(jsonPath("$.data.reviews[1].language").value("VI"))
                     .andExpect(jsonPath("$.data.reviews[1].translatedContent").value(nullValue()))
                     .andExpect(jsonPath("$.data.reviews[2].nationality").value("JP"))

@@ -7,6 +7,7 @@ import com.hackathon.domain.place.exception.PlaceException;
 import com.hackathon.domain.place.repository.PlaceRepository;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,5 +33,11 @@ public class PlaceService {
     public List<Place> getActivePlacesByContentIds(Collection<String> contentIds) {
         if (contentIds.isEmpty()) return List.of();
         return placeRepository.findAllByContentIdInAndStatus(contentIds, PlaceStatus.ACTIVE);
+    }
+
+    /** TourAPI contentId로 노출 중(ACTIVE)인 장소를 찾는다. 환경마다 placeId가 달라 데이터 파일은 contentId로 장소를 가리킨다 (F6 샘플 한걸음) */
+    public Optional<Place> findActiveByContentId(String contentId) {
+        return placeRepository.findByContentId(contentId)
+                .filter(place -> place.getStatus() == PlaceStatus.ACTIVE);
     }
 }

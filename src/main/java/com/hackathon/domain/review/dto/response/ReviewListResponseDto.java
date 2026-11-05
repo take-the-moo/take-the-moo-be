@@ -43,12 +43,15 @@ public record ReviewListResponseDto(
 
             @Schema(description = "첨부 사진 주소 (서버 기준 경로). 사진이 없으면 null",
                     example = "/api/photos/9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e", nullable = true)
-            String photoUrl
+            String photoUrl,
+
+            @Schema(description = "true면 시연용 샘플 한걸음 (실제 사용자가 쓴 글이 아니다)", example = "false")
+            boolean sample
     ) {
 
-        public static Item of(Review review, String translatedContent, Nationality nationality) {
+        public static Item of(Review review, String translatedContent, Nationality nationality, boolean sample) {
             return new Item(review.getId(), review.getContent(), review.getLanguage(), translatedContent, nationality,
-                    review.getCreatedAt().toLocalDate(), PhotoService.urlOf(review.getPhotoId()));
+                    review.getCreatedAt().toLocalDate(), PhotoService.urlOf(review.getPhotoId()), sample);
         }
     }
 }

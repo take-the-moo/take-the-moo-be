@@ -25,6 +25,7 @@ import com.hackathon.global.common.Nationality;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -95,13 +96,14 @@ public class ReviewService {
 
         List<Review> reviews = reviewRepository.findByPlaceIdOrderByCreatedAtDescIdDesc(place.getId(),
                 PageRequest.of(0, size));
-        Map<String, Nationality> nationalities = userService.getNationalities(
-                reviews.stream().map(Review::getUserId).distinct().toList());
+        List<String> userIds = reviews.stream().map(Review::getUserId).distinct().toList();
+        Map<String, Nationality> nationalities = userService.getNationalities(userIds);
+        Set<String> sampleUsers = userService.getSampleUserIds(userIds);
         Map<Long, String> translations = translations(reviews, viewer);
 
         List<ReviewListResponseDto.Item> items = reviews.stream()
                 .map(review -> ReviewListResponseDto.Item.of(review, translations.get(review.getId()),
-                        nationalities.get(review.getUserId())))
+                        nationalities.get(review.getUserId()), sampleUsers.contains(review.getUserId())))
                 .toList();
         return new ReviewListResponseDto(place.getId(), viewer, items);
     }
