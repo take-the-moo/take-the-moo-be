@@ -8,8 +8,8 @@ Java 25 · Spring Boot 4.1 · Spring AI 2.0 (Anthropic) · DB 없음.
 ```bash
 bash scripts/setup-hooks.sh                  # clone 후 1회 (git 훅)
 LLM_MOCK=true ./gradlew bootRun              # 목 모드 — API 키 없이 고정 응답
-export ANTHROPIC_API_KEY=...                 # 실제 호출 (키는 환경변수로만)
-./gradlew bootRun
+cp src/main/resources/application-secret.yml.example src/main/resources/application-secret.yml
+./gradlew bootRun                            # 실제 호출 — application-secret.yml에 키 기입 (gitignore 대상)
 ```
 
 - JDK 25가 없으면 Gradle이 첫 빌드 때 자동으로 내려받는다 (실행용 JDK는 17 이상이면 된다)
@@ -64,7 +64,7 @@ src/main/resources/{application.yml, prompts.yml}
 
 | 키 | 기본값 | 설명 |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | (없음) | Anthropic API 키 — 환경변수로만 |
+| `spring.ai.anthropic.api-key` | (없음) | Anthropic API 키 — `application-secret.yml`(gitignore) 또는 환경변수 `ANTHROPIC_API_KEY` |
 | `LLM_MOCK` / `llm.mock` | `false` | 목 모드 |
 | `llm.timeout.connect` / `read` / `request` | 5s / 60s / 120s | LLM 호출 연결 / 응답 대기 / 전체 상한 |
 | `llm.max-retries` | 1 | SDK 재시도 횟수 |

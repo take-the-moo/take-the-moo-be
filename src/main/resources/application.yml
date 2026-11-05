@@ -3,7 +3,10 @@ spring:
     name: hackathon-llm
   config:
     # 프롬프트는 prompts.yml에서만 관리한다 (Java 코드에 프롬프트 문자열 금지)
-    import: classpath:prompts.yml
+    # 로컬 시크릿(API 키 등)은 gitignore된 application-secret.yml에 둔다. 없으면 무시 (예시: application-secret.yml.example)
+    import:
+      - classpath:prompts.yml
+      - optional:classpath:application-secret.yml
   threads:
     virtual:
       enabled: true
@@ -18,7 +21,7 @@ spring:
       max-request-size: 11MB
   ai:
     anthropic:
-      # API 키는 환경변수로만 주입한다. 값을 이 파일에 직접 쓰지 않는다 (pre-commit이 차단)
+      # 키는 application-secret.yml(우선) 또는 환경변수로 주입한다. 값을 이 파일에 직접 쓰지 않는다 (pre-commit이 차단)
       api-key: ${ANTHROPIC_API_KEY:}
 
 llm:
