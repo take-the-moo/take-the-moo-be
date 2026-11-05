@@ -18,7 +18,7 @@
 | `visit` | `Visit` | `domain/visit` | F5·F6·F2 | 구현 전 |
 | `review` | `Review` | `domain/review` | F6·F3 | 구현됨 |
 | `review_translation` | `ReviewTranslation` | `domain/review` | F6 | 구현됨 |
-| `explanation_translation` | `ExplanationTranslation` | `domain/place` | F4 | 구현 전 |
+| `explanation_translation` | `ExplanationTranslation` | `domain/place` | F4 | 구현됨 |
 | `scene` | `Scene` | `domain/scene` | F3 | 구현됨 |
 | `postcard` | `Postcard` | `domain/postcard` | F7 | 구현 전 |
 
@@ -188,9 +188,9 @@ docker compose down -v
 | `place_id` | BIGINT | N | |
 | `language` | ENUM | N | 번역 언어 |
 | `translated_text` | LONGTEXT | N | |
-| `source_hash` | VARCHAR(64) | N | 번역에 쓴 `fieldExplanation()`의 SHA-256 |
+| `source_hash` | VARCHAR(64) | N | 번역 입력(모델 + 완성된 프롬프트 + `fieldExplanation()` 원문)의 SHA-256. 원문이나 프롬프트가 바뀌면 다시 번역한다 |
 
-유니크: (`place_id`, `language`). 현재 원문의 해시와 다르면 다시 번역한다.
+유니크: (`place_id`, `language`). 저장된 해시가 지금 입력의 해시와 다르면 다시 번역해 덮어쓴다. 언어가 `KO`면 번역하지 않으므로 행을 만들지 않는다.
 
 ### `scene` 맞춤 장면 캐시
 | 컬럼 | 타입 | NULL | 설명 |
