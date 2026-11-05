@@ -164,7 +164,7 @@ docker compose down -v
 | `user_id` | VARCHAR(36) | N | |
 | `content` | VARCHAR(200) | N | 한 줄 후기 원문 |
 | `language` | ENUM | N | 실제 작성 언어 |
-| `photo_id` | VARCHAR(36) | Y | |
+| `photo_id` | VARCHAR(36) | Y | 첨부 사진. 작성자 본인의 사진만 (`PhotoService.getOwnedPhoto`) |
 
 - 인덱스: (`place_id`, `created_at`)
 - **`language`에 사용자 설정을 복사하지 않는다.** 요청으로 받거나 감지한 실제 작성 언어를 넣는다.
