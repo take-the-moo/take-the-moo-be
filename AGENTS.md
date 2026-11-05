@@ -37,7 +37,7 @@ Swagger: http://localhost:8080/swagger-ui.html · 프론트 명세: `docs/api.md
 | F5 방문 도장·기록 | `domain/visit` | `POST /api/visits`, `GET /api/users/{userId}/visits` | - |
 | F6 흔적 지도·한걸음 | `domain/review`, `domain/visit` | `GET /api/map/pins`, `GET·POST /api/places/{placeId}/reviews` | 한걸음 번역, 욕설·광고 필터 |
 | F7 회고 엽서 | `domain/postcard` | `POST /api/postcards`, `GET /api/postcards/{postcardId}` | 사진 4장 + 소감 + 그림체 → 엽서 이미지 (OpenAI) |
-| 장소·역 데이터 | `domain/place` | (시드 데이터 적재) | - |
+| 장소·역 데이터 | `domain/place` | (TourAPI 스케줄 동기화 + 팀 보강 데이터) | - |
 | 공통 | `global`, `domain/llm` | `GET /api/health` | - |
 
 범위 밖(만들지 않는다): 장면 삽화, TTS, 단어장, 가족용 공유 페이지, 추가 질문 채팅, 혼잡도, 축제 추천.
@@ -72,6 +72,23 @@ com.hackathon
 - 엔티티는 `BaseTimeEntity`를 상속한다
 - 사용자는 로그인 없는 익명 사용자. `userId`는 서버가 만든 UUID 문자열이고 프론트가 기기에 저장한다
 
+## 장소 데이터 (TourAPI 동기화)
+장소 기본 정보는 CSV·하드코딩 시드가 아니라 **TourAPI를 호출해 DB에 동기화**한다. 관리자 API는 만들지 않는다.
+
+- **실행 시점**: 서버 시작 시 장소 테이블이 비어 있으면 1회 + `@Scheduled(cron = "${app.tour.sync-cron}", zone = "Asia/Seoul")`로 매일 1회. `app.tour.sync-enabled=false`면 둘 다 건너뛴다 (발표 전에는 끈다)
+- **필드 출처를 나눈다**
+  | 출처 | 필드 | 동기화 때 |
+  |---|---|---|
+  | TourAPI | `contentId`(유니크 키), 이름, 주소, 좌표, 개요, 대표 이미지, `modifiedTime` | 갱신 |
+  | 팀 보강 | 추천 시간대, 실내 여부, 현장 해설 원문, 민감한 역사 여부, 코스 | 덮어쓰지 않는다 |
+- 팀 보강 데이터는 API가 없으므로 `src/main/resources/`의 보강 파일(`contentId` 기준)로 관리하고 동기화 때 합친다
+- **upsert 규칙**: `contentId`로 찾아 있으면 TourAPI 필드만 갱신, 없으면 추가. `modifiedTime`이 바뀐 장소만 상세(개요)를 다시 받는다
+- **새 장소**는 팀 보강이 없으므로 `검수 전` 상태로 두고 추천·후보에서 뺀다. 보강 파일에 들어오면 노출한다
+- **TourAPI에서 사라진 장소**는 지우지 않고 비활성으로 바꾼다 (방문 기록·한걸음이 placeId로 참조한다)
+- **실패해도 서버는 계속 돈다**: 호출 실패·키 없음이면 로그만 남기고 기존 DB 데이터를 유지한다
+- 테스트·목 모드에서는 외부 호출 없이 동작해야 한다 (키가 비어 있으면 건너뛰므로 테스트는 고정 데이터를 직접 넣는다)
+- 지하철역 좌표는 7개 남짓이라 동기화 대상이 아니다. 보강 파일에 함께 둔다
+
 ## 응답·예외 컨벤션
 - 모든 JSON 응답은 `ApiResult { resultType, httpStatusCode, code(실패 시), message, data }`
 - 성공: `return ApiResponse.of(SuccessType.SUCCESS, data);` (생성은 `SuccessType.CREATED`)
@@ -88,7 +105,7 @@ com.hackathon
 - **민감한 역사**: 식민지 역사가 얽힌 장소(서대문형무소 등)는 누군가를 탓하지 않고 "기억과 평화의 공간"으로 담담하게 전한다. 이 원칙은 해당 프롬프트 system에 고정한다
 - **시연 안정성**: 모든 AI 기능은 목 응답이 있어야 한다. 위치·날씨·시간은 요청 파라미터로 시뮬레이션할 수 있게 한다 (발표장은 실내). 번역·장면은 장소·언어별로 캐싱한다
 - **응답 시간**: 추천·장면은 몇 초 안. 엽서처럼 오래 걸리는 생성은 비동기 + 상태 조회
-- **샘플 데이터**: 지도가 비어 보이지 않게 장소별 한걸음 3~5개, 국적이 섞인 방문 기록을 시드로 넣는다. 샘플임을 구분할 수 있게 한다
+- **샘플 데이터**: 지도가 비어 보이지 않게 장소별 한걸음 3~5개, 국적이 섞인 방문 기록을 샘플로 넣는다 (사용자 데이터라 TourAPI와 별개). 샘플임을 구분할 수 있게 한다
 
 ## LLM 규칙
 - 프롬프트 문자열은 Java 코드에 쓰지 않는다. `src/main/resources/prompts.yml`에만 (model, temperature, max-tokens, system, defaults). 장소 데이터 같은 입력값은 user 메시지로 넘긴다
@@ -105,9 +122,12 @@ com.hackathon
 |---|---|---|
 | `app.storage.dir` | 사진·엽서 저장 디렉터리 (기본 `./uploads`) | 기본값 |
 | `app.weather.kma-service-key` | 기상청 초단기실황 (공공데이터포털 Decoding 키) | 날씨 시뮬레이션/기본값 |
+| `app.tour.service-key` | TourAPI 국문 관광정보 (공공데이터포털 Decoding 키) | 동기화 건너뜀, DB 데이터 유지 |
+| `app.tour.sync-enabled` / `sync-cron` | 장소 동기화 켜기 / 주기 (기본 `true` / 매일 04:00) | - |
+| `app.tour.area-code` / `sigungu-code` | 서울 / 서대문구 (기본 `1` / `14`, TourAPI 문서로 확인) | - |
 | `app.demo.default-station` | 위치·역이 없을 때 기준 역 (기본 `dongnimmun`) | 기본값 |
 
-키는 `application.yml`(gitignore) 또는 환경변수(`APP_WEATHER_KMA_SERVICE_KEY`)로 넣는다. AI 키는 `spring.ai.anthropic.api-key`(`ANTHROPIC_API_KEY`), `spring.ai.openai.api-key`(`OPENAI_API_KEY`).
+키는 `application.yml`(gitignore) 또는 환경변수(`APP_WEATHER_KMA_SERVICE_KEY`, `APP_TOUR_SERVICE_KEY`)로 넣는다. AI 키는 `spring.ai.anthropic.api-key`(`ANTHROPIC_API_KEY`), `spring.ai.openai.api-key`(`OPENAI_API_KEY`).
 
 ## 속도 규칙
 - 계획 승인 루프 없이 바로 구현한다
@@ -118,7 +138,7 @@ com.hackathon
 
 ## 절대 규칙
 1. API 키·`.env`·`src/main/resources/application.yml`을 커밋하지 않는다. `application.yml`은 gitignore 대상이고 팀원끼리 직접 공유한다 (키 패턴은 pre-commit이 차단)
-2. `application.yml`의 API 키 값은 읽지 않는다 (`spring.ai.anthropic.api-key`, `spring.ai.openai.api-key`, `app.weather.kma-service-key` 등)
+2. `application.yml`의 API 키 값은 읽지 않는다 (`spring.ai.anthropic.api-key`, `spring.ai.openai.api-key`, `app.weather.kma-service-key`, `app.tour.service-key` 등)
    - 파일 전체를 `cat`·Read로 열지 않는다. 설정을 확인하거나 고칠 땐 필요한 구간만 보고, 키가 있는 줄은 빼고 본다 (예: `grep -v -i 'key' application.yml`)
    - 키 값을 응답·로그·커밋 메시지·문서·테스트에 옮겨 적지 않는다. `.env`와 `ANTHROPIC_API_KEY`·`OPENAI_API_KEY` 같은 환경변수 값도 출력하지 않는다 (`env`, `printenv`, `echo $..._KEY` 금지)
    - 키가 필요한 동작은 목 모드(`LLM_MOCK=true`)로 확인한다. 실제 키 확인이 필요하면 사람에게 요청한다
