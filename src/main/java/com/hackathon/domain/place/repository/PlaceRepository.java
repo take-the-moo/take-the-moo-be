@@ -13,5 +13,5 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
 
     List<Place> findAllByStatus(PlaceStatus status);
 
-    List<Place> findAllByContentIdInAndStatus(Collection<String> contentIds, PlaceStatus status);
+    List<Place> findAllByContentIdIn(Collection<String> contentIds);
 }

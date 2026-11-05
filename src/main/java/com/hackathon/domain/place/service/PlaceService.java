@@ -54,10 +54,16 @@ public class PlaceService {
                 .toList();
     }
 
-    /** contentId로 노출 중(ACTIVE)인 장소를 찾는다. 없거나 노출하지 않는 장소는 결과에서 빠진다 (F5 코스) */
-    public List<Place> getActivePlacesByContentIds(Collection<String> contentIds) {
+    /** contentId로 장소를 찾는다. 노출 상태와 상관없이 주고, 없는 장소는 결과에서 빠진다 (F5 코스) */
+    public List<Place> getPlacesByContentIds(Collection<String> contentIds) {
         if (contentIds.isEmpty()) return List.of();
-        return placeRepository.findAllByContentIdInAndStatus(contentIds, PlaceStatus.ACTIVE);
+        return placeRepository.findAllByContentIdIn(contentIds);
+    }
+
+    /** id로 장소를 찾는다. 노출 상태와 상관없이 주고, 없는 장소는 결과에서 빠진다 (F5 방문 기록: 사라진 장소의 기록도 남긴다) */
+    public List<Place> getPlacesByIds(Collection<Long> placeIds) {
+        if (placeIds.isEmpty()) return List.of();
+        return placeRepository.findAllById(placeIds);
     }
 
     /** TourAPI contentId로 노출 중(ACTIVE)인 장소를 찾는다. 환경마다 placeId가 달라 데이터 파일은 contentId로 장소를 가리킨다 (F6 샘플 한걸음) */

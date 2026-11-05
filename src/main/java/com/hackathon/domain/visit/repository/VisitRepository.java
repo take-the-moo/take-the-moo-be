@@ -18,6 +18,9 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     long countByUserId(String userId);
 
+    /** 최신 날짜 순, 같은 날은 도장을 찍은 순서 */
+    List<Visit> findAllByUserIdOrderByVisitedDateDescIdAsc(String userId);
+
     @Query("select distinct v.placeId from Visit v where v.userId = :userId")
     List<Long> findVisitedPlaceIds(@Param("userId") String userId);
 
