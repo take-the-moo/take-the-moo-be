@@ -202,6 +202,50 @@ curl -F file=@photo.png -F question="이 사진에 뭐가 보여?" localhost:808
 
 ---
 
+### POST /api/users
+
+F1 처음 설정. 국적·언어로 익명 사용자를 만든다. 응답의 `userId`를 기기에 저장해 두고 이후 요청에 쓴다.
+
+요청 (`Content-Type: application/json`)
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| nationality | string | O | 국적 코드 (`VN, CN, JP, MN, UZ, US, OTHER`) |
+| language | string | O | 이야기·번역 언어 코드 (`KO, EN, VI, ZH, JA, MN, UZ`) |
+
+```json
+{ "nationality": "VN", "language": "VI" }
+```
+
+응답 201
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 201,
+  "message": "성공적으로 생성하였습니다.",
+  "data": {
+    "userId": "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c",
+    "nationality": "VN",
+    "language": "VI"
+  }
+}
+```
+
+오류: 400 `COMMON_INVALID_REQUEST`(없는 코드값, JSON 형식 오류), 422 `COMMON_VALIDATION_FAILED`(필드 누락)
+
+---
+
+### GET /api/users/{userId}
+
+저장해 둔 `userId`로 사용자를 조회한다. 앱을 다시 열 때 기기에 저장된 `userId`가 아직 유효한지 확인하는 데 쓴다.
+
+응답 200 — `data` 형식은 `POST /api/users`와 같다.
+
+오류: 404 `USER_NOT_FOUND`(없는 userId — 처음 설정으로 돌아간다)
+
+---
+
 ### GET /api/health
 
 ```json
@@ -222,6 +266,7 @@ curl -F file=@photo.png -F question="이 사진에 뭐가 보여?" localhost:808
 | 400 | `COMMON_INVALID_REQUEST` | JSON 형식 오류, 필수 파라미터·파트 누락, 타입 불일치 |
 | 400 | `LLM_PROMPT_NOT_FOUND` | 등록되지 않은 promptKey |
 | 404 | `COMMON_NOT_FOUND` | 없는 경로 |
+| 404 | `USER_NOT_FOUND` | 없는 userId |
 | 405 | `COMMON_METHOD_NOT_ALLOWED` | 지원하지 않는 HTTP 메서드 |
 | 415 | `COMMON_UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 422 | `COMMON_VALIDATION_FAILED` | 값 검증 실패 (빈 메시지, 길이 초과, 이미지 형식·크기). message에 필드별 사유 |
