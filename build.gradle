@@ -32,6 +32,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.ai:spring-ai-starter-model-anthropic'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	runtimeOnly 'com.mysql:mysql-connector-j'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -39,6 +41,8 @@ dependencies {
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// 테스트·CI는 MySQL 없이 H2 인메모리(MySQL 모드)로 돈다
+	testRuntimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {

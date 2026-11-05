@@ -1,5 +1,6 @@
-# 빌드 확인용 최소 CI. main push / PR마다 컴파일 + 테스트(목 모드)를 돌린다.
-# merge 차단·배포는 하지 않는다. API 키 시크릿도 필요 없다.
+# 빌드 확인용 최소 CI. main push / PR마다 컴파일만 확인한다.
+# application.yml은 gitignore(팀원끼리 로컬 공유)라 CI에서는 앱 기동·테스트를 돌리지 않는다. 테스트는 로컬에서 ./gradlew test
+# merge 차단·배포는 하지 않는다.
 name: CI
 
 on:
@@ -29,15 +30,5 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Build (compile + test, mock mode)
-        run: ./gradlew build
-        env:
-          LLM_MOCK: 'true'
-
-      - name: Upload test report on failure
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: test-report
-          path: build/reports/tests/test
-          retention-days: 3
+      - name: Compile (main + test)
+        run: ./gradlew compileJava compileTestJava

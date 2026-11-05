@@ -5,15 +5,17 @@
 ## 프로젝트 개요
 - **주제**: (당일 기입)
 - **핵심 장면**: [누가] [언제] [무엇 때문에] 막힌다 → (당일 기입)
-- 스택: Java 25 · Spring Boot 4.1 · Spring AI 2.0 (Anthropic) · Gradle Groovy · DB 없음
+- 스택: Java 25 · Spring Boot 4.1 · Spring AI 2.0 (Anthropic) · Gradle Groovy · MySQL 8.4 (JPA, 테스트는 H2)
 
 ## 명령어
 ```bash
 ./gradlew compileJava              # 빠른 확인 (변경 후 필수)
 ./gradlew test                     # 테스트 (목 모드로 돈다)
 ./gradlew build                    # 전체 빌드
+docker compose up -d mysql         # 로컬 DB (localhost:3307, bootRun 전에 필요)
 LLM_MOCK=true ./gradlew bootRun    # 목 모드 실행 — API 키·크레딧 없이 고정 응답
-ANTHROPIC_API_KEY=... ./gradlew bootRun   # 실제 호출
+./gradlew bootRun                  # 실제 호출 — 키는 src/main/resources/application.yml
+LLM_MOCK=true docker compose up -d --build   # 컨테이너 실행 (목 모드)
 bash scripts/setup-hooks.sh        # clone 후 1회 — git 훅 활성화
 ```
 Swagger: http://localhost:8080/swagger-ui.html · 프론트 명세: `docs/api.md`
@@ -52,6 +54,6 @@ com.hackathon
 - 데모 전에는 `/demo-check`로 전 엔드포인트를 확인한다
 
 ## 절대 규칙
-1. API 키·`.env`를 커밋하지 않는다. 키는 환경변수 `ANTHROPIC_API_KEY`로만 (pre-commit이 차단)
+1. API 키·`.env`·`src/main/resources/application.yml`을 커밋하지 않는다. `application.yml`은 gitignore 대상이고 팀원끼리 직접 공유한다 (키 패턴은 pre-commit이 차단)
 2. force push 하지 않는다
 3. 커밋은 사용자가 요청할 때만 한다
