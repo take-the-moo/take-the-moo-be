@@ -22,6 +22,16 @@ public record ReviewCreateRequestDto(
 
         @Schema(description = "실제로 쓴 언어. 비우면 서버가 글을 보고 판단한다 (사용자 설정 언어를 그대로 넣지 않는다)",
                 example = "KO")
-        Language language
+        Language language,
+
+        @Schema(description = "첨부 사진 (선택). POST /api/photos가 돌려준 photoId — 내가 올린 사진만 붙일 수 있다",
+                example = "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e")
+        @Size(max = 36, message = "올바른 사진 ID가 아닙니다.")
+        String photoId
 ) {
+
+    /** 사진 없이 쓰는 한걸음 */
+    public ReviewCreateRequestDto(String userId, String content, Language language) {
+        this(userId, content, language, null);
+    }
 }

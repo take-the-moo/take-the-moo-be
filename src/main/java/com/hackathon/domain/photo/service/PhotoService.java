@@ -82,6 +82,11 @@ public class PhotoService {
         return new PhotoFile(fileStorage.load(photo.getStoredName()), photo.getContentType(), photo.getSizeBytes());
     }
 
+    /** 사진 파일 주소 (/api/photos/{photoId}). 다른 도메인 응답에 넣을 때 쓴다. photoId가 없으면 null */
+    public static String urlOf(String photoId) {
+        return photoId == null ? null : PhotoResponseDto.urlOf(photoId);
+    }
+
     private Photo find(String photoId) {
         return photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoException(PhotoErrorType.NOT_FOUND, "photoId=" + photoId));
