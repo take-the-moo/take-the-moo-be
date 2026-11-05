@@ -20,7 +20,7 @@
 # 예정 promptKey (기능 구현 때 추가): recommend(F2) · translate-explanation(F4) · translate-review·moderate(F6)  (scene(F3)는 추가됨)
 #   recommend 메모 (2026-11 실제 호출 테스트): 후보·요약에 없는 사실 금지 / 민감한 역사도 "누가"를 빼지 않는다
 #     (일본 유학생 응답에서 "일제가"가 빠졌다) / 걷는 시간은 서버가 계산한다 / max-tokens 1500 이상
-# 엽서 이미지(F7)는 OpenAI라 형식이 다르다 — 이미지 프롬프트도 이 파일에 둔다 (Java 코드 금지)
+# 엽서 이미지(F7)는 OpenAI 이미지 편집 API다 — ImageClient가 model과 system(= 이미지 지시문)만 쓴다. max-tokens는 넣지 않는다
 # chat / analyze / image는 범용 샘플이다. 필요 없어지면 지워도 된다
 llm:
   prompts:
@@ -79,3 +79,15 @@ llm:
         - 감정을 싣는 수식어("만행", "탄압기관", "모진", "원흉" 등)와 특정 국가·국민 전체를 겨냥하는 표현은 쓰지 않는다. 일본·중국 유학생도 같은 글을 자기 언어로 읽는다
         - storyNative와 storyEasyKorean은 이곳이 기억과 평화의 공간이라는 뜻으로 끝맺는다
         - connectionLine도 같은 기준을 따른다. 나라끼리 고통의 크기를 견주지 않는다
+
+    # F7 엽서 그림 — ImageClient.redraw()가 사용자 사진과 함께 OpenAI에 보낸다 (Claude가 아니다)
+    # 처음 버전. 템플릿이 나오면 그림체를 템플릿에 맞춰 고치고, 템플릿이 늘면 postcard-image-<템플릿> 키를 추가한다
+    # 글씨(제목·한 문장)는 서버가 템플릿에 쓰므로 그림에는 글자를 넣지 않게 한다
+    postcard-image:
+      model: gpt-image-1
+      system: |
+        Redraw this photo as the artwork of a vintage illustrated travel postcard.
+        - Keep the same place, composition, buildings and people from the photo so the traveler recognizes their own moment.
+        - Warm, soft painterly illustration with gentle light and slightly muted colors.
+        - Do not add any text, letters, numbers, signs, logos, borders or frames. The postcard layout is added later.
+        - Keep the mood calm and respectful. Do not add cartoonish or comic elements.
