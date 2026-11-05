@@ -1,0 +1,27 @@
+# EC2 배포 전용 덧붙임. compose.yml 위에 얹어 쓴다 (서버 ~/app/.env의 COMPOSE_FILE=compose.yml:compose.prod.yml)
+# 로컬 개발은 compose.yml만 쓴다
+services:
+  api:
+    environment:
+      # Caddy가 보낸 X-Forwarded-Proto를 믿어 Swagger 등이 https 주소를 쓰게 한다
+      - SERVER_FORWARD_HEADERS_STRATEGY=framework
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"     # 인증서 발급(HTTP-01)과 https로 넘기기
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - DOMAIN=${DOMAIN:?서버 ~/app/.env에 DOMAIN이 필요하다}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data      # 인증서. 지우면 다시 발급받는다 (Let's Encrypt 발급 횟수 제한 주의)
+      - caddy-config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+  caddy-config:
