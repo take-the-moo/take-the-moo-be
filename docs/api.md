@@ -298,7 +298,10 @@ curl 'localhost:8080/api/now?userId=3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c&station
     "alternatives": [
       { "placeId": 4, "name": "독립문", "distanceMeters": 287 }
     ],
-    "weeklyPopular": []
+    "weeklyPopular": [
+      { "placeId": 4, "name": "독립문", "visitorCount": 12 },
+      { "placeId": 51, "name": "독립문영천시장", "visitorCount": 9 }
+    ]
   }
 }
 ```
@@ -308,7 +311,8 @@ curl 'localhost:8080/api/now?userId=3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c&station
 - `reason`은 사용자 언어, `reasonKo`는 쉬운 한국어 한 문장이다
 - `walkMinutes`는 서버가 계산한다 (직선거리 ÷ 분당 67m, 올림)
 - `alternatives`는 추천에서 빠진 다른 후보 최대 3곳 (가까운 순)
-- `weeklyPopular`는 방문 기록 기능이 붙기 전까지 빈 배열이다. 형식(`placeId`, `name`, `visitCount`)은 그때 확정한다
+- `weeklyPopular`는 지난주 인기 장소다. 오늘을 포함한 최근 7일(서울 날짜) 동안 방문 도장을 찍은 사람이 많은 순으로 최대 3곳. 위치·추천과 무관하게 모두에게 같다
+  - `visitorCount`는 사람 수다 (한 사람이 여러 날 와도 1명). 노출하지 않는 장소는 빠지고, 방문 기록이 없으면 빈 배열이다
 - `context.temperature`는 기상청 날씨일 때만 온다. `weather`를 지정했거나 기본값이면 `null`
 - AI가 후보 밖 장소를 고르거나 응답에 실패하면 가장 가까운 후보와 기본 문구("지금 가까이에서 가 볼 만한 곳이에요.")를 준다. 그래서 AI 오류로 실패하지 않는다
 - 추천 결과와 위치는 저장하지 않는다. 실제 AI 호출은 몇 초(약 4초) 걸린다

@@ -1,6 +1,8 @@
 package com.hackathon.domain.recommend.controller;
 
-import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,7 +25,11 @@ import com.hackathon.domain.recommend.dto.response.RecommendChoice;
 import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
 import com.hackathon.domain.user.service.UserService;
 import com.hackathon.global.common.Language;
+import com.hackathon.domain.visit.entity.Visit;
+import com.hackathon.domain.visit.repository.VisitRepository;
 import com.hackathon.global.common.Nationality;
+import com.hackathon.global.util.SeoulTime;
+import java.time.LocalDate;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -63,6 +69,9 @@ class NowControllerTest {
     @Autowired
     UserService userService;
 
+    @Autowired
+    VisitRepository visitRepository;
+
     @MockitoSpyBean
     LlmClient llmClient;
 
@@ -88,6 +97,10 @@ class NowControllerTest {
         place.updateOverview(name + " 설명");
         place.applyRules(null, true, false);
         return placeRepository.save(place).getId();
+    }
+
+    private void visit(String userId, Long placeId, LocalDate date) {
+        visitRepository.save(Visit.create(userId, placeId, date));
     }
 
     private ResultActions now(String weather, String time) throws Exception {
@@ -123,7 +136,7 @@ class NowControllerTest {
                     .andExpect(jsonPath("$.data.context.baseStation").value("부산테스트역" + AREA.get()))
                     .andExpect(jsonPath("$.data.alternatives[0].placeId").value(far))
                     .andExpect(jsonPath("$.data.alternatives[0].distanceMeters").value(500))
-                    .andExpect(jsonPath("$.data.weeklyPopular", empty()));
+                    .andExpect(jsonPath("$.data.weeklyPopular").isArray());
         }
 
         @Test
@@ -167,6 +180,30 @@ class NowControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.context.timeSlot").value(nullValue()))
                     .andExpect(jsonPath("$.data.place.placeId").value(dayOnly));
+        }
+
+        @Test
+        void 최근_7일_방문자가_많은_장소를_지난주_인기로_준다() throws Exception {
+            Long popular = savePlace("인기장소", OUTDOOR, 100);
+            Long second = savePlace("두번째", OUTDOOR, 200);
+            Long old = savePlace("오래전", OUTDOOR, 300);
+            LocalDate today = SeoulTime.today();
+            // 다른 테스트의 방문보다 확실히 많게: 인기장소 9명, 두번째 8명. 같은 사람이 여러 날 와도 1명
+            for (int i = 0; i < 9; i++) visit("pop-" + AREA.get() + "-" + i, popular, today.minusDays(i % 7));
+            visit("pop-" + AREA.get() + "-0", popular, today.minusDays(3));
+            for (int i = 0; i < 8; i++) visit("sec-" + AREA.get() + "-" + i, second, today.minusDays(1));
+            // 7일 전(오늘 포함 7일 밖) 방문은 세지 않는다
+            for (int i = 0; i < 20; i++) visit("old-" + AREA.get() + "-" + i, old, today.minusDays(7));
+
+            now("CLEAR", "15:00")
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.weeklyPopular[0].placeId").value(popular))
+                    .andExpect(jsonPath("$.data.weeklyPopular[0].name").value("인기장소"))
+                    .andExpect(jsonPath("$.data.weeklyPopular[0].visitorCount").value(9))
+                    .andExpect(jsonPath("$.data.weeklyPopular[1].placeId").value(second))
+                    .andExpect(jsonPath("$.data.weeklyPopular[1].visitorCount").value(8))
+                    .andExpect(jsonPath("$.data.weeklyPopular[*].placeId", not(hasItem(old.intValue()))))
+                    .andExpect(jsonPath("$.data.weeklyPopular.length()").value(lessThanOrEqualTo(3)));
         }
 
         @Test

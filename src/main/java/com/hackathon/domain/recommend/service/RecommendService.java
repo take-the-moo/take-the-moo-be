@@ -17,6 +17,7 @@ import com.hackathon.domain.recommend.exception.RecommendErrorType;
 import com.hackathon.domain.recommend.exception.RecommendException;
 import com.hackathon.domain.user.dto.response.UserResponseDto;
 import com.hackathon.domain.user.service.UserService;
+import com.hackathon.domain.visit.service.VisitService;
 import com.hackathon.domain.weather.dto.CurrentWeather;
 import com.hackathon.domain.weather.dto.WeatherCondition;
 import com.hackathon.domain.weather.service.WeatherService;
@@ -24,6 +25,7 @@ import com.hackathon.global.common.Language;
 import com.hackathon.global.common.Nationality;
 import com.hackathon.global.common.TimeSlot;
 import com.hackathon.global.util.SeoulTime;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -51,6 +54,9 @@ public class RecommendService {
     private static final String PROMPT_KEY = "recommend";
     static final int CANDIDATES = 6;
     static final int ALTERNATIVES = 3;
+    static final int POPULAR = 3;
+    /** 지난주 인기 기간 (오늘 포함) */
+    static final int POPULAR_DAYS = 7;
     static final int SUMMARY_MAX = 300;
     /** 걷는 속도 (분당 미터) */
     static final int WALK_METERS_PER_MINUTE = 67;
@@ -60,6 +66,7 @@ public class RecommendService {
     private final PlaceService placeService;
     private final UserService userService;
     private final WeatherService weatherService;
+    private final VisitService visitService;
     private final PromptRegistry promptRegistry;
     private final LlmClient llmClient;
     private final JsonMapper jsonMapper;
@@ -91,8 +98,8 @@ public class RecommendService {
         Optional<TimeSlot> timeSlot = TimeSlot.from(time);
         CurrentWeather weather = weatherService.resolve(simulatedWeather);
 
-        List<NearbyPlace> candidates = candidates(placeService.getActivePlacesByDistance(location),
-                timeSlot.orElse(null), weather.condition());
+        List<NearbyPlace> activePlaces = placeService.getActivePlacesByDistance(location);
+        List<NearbyPlace> candidates = candidates(activePlaces, timeSlot.orElse(null), weather.condition());
         if (candidates.isEmpty()) {
             throw new RecommendException(RecommendErrorType.NOT_FOUND, "노출 중이고 해설이 있는 장소 없음");
         }
@@ -129,7 +136,24 @@ public class RecommendService {
                 new NowResponseDto.Context(time.format(HH_MM), timeSlot.orElse(null), weather.condition(),
                         weather.temperature(), weather.source(), location.baseStation()),
                 alternatives,
-                List.of());
+                weeklyPopular(activePlaces));
+    }
+
+    /**
+     * 지난주 인기: 오늘을 포함한 최근 7일(서울 날짜) 동안 방문자가 많은 노출 장소 POPULAR곳.
+     * 방문자는 사람 수다 (한 사람이 여러 날 와도 1명). 노출하지 않는 장소는 뺀다. 날짜까지만 쓰고 개인 방문 시각은 내보내지 않는다
+     */
+    private List<NowResponseDto.PopularPlace> weeklyPopular(List<NearbyPlace> activePlaces) {
+        Map<Long, Place> byId = activePlaces.stream()
+                .collect(Collectors.toMap(nearby -> nearby.place().getId(), NearbyPlace::place));
+        LocalDate today = SeoulTime.today();
+        // 노출하지 않는 장소가 섞여도 POPULAR곳을 채울 수 있게 넉넉히 받는다
+        return visitService.topPlaces(today.minusDays(POPULAR_DAYS - 1), today, POPULAR * 2).stream()
+                .filter(count -> byId.containsKey(count.placeId()))
+                .limit(POPULAR)
+                .map(count -> new NowResponseDto.PopularPlace(count.placeId(), byId.get(count.placeId()).getName(),
+                        count.visitorCount()))
+                .toList();
     }
 
     /**

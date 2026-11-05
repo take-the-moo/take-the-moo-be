@@ -25,7 +25,7 @@ public record NowResponseDto(
         @Schema(description = "다른 후보 (가까운 순, 최대 3곳)")
         List<Alternative> alternatives,
 
-        @Schema(description = "지난주 인기 장소. 방문 기록 기능이 붙기 전까지는 빈 배열")
+        @Schema(description = "지난주 인기 장소 (최근 7일 방문자 많은 순, 최대 3곳). 방문 기록이 없으면 빈 배열")
         List<PopularPlace> weeklyPopular
 ) {
 
@@ -87,7 +87,7 @@ public record NowResponseDto(
     ) {
     }
 
-    @Schema(description = "지난주 인기 장소 (형식은 방문 기록 기능과 함께 확정한다)")
+    @Schema(description = "지난주 인기 장소")
     public record PopularPlace(
             @Schema(description = "장소 ID", example = "4")
             Long placeId,
@@ -95,8 +95,8 @@ public record NowResponseDto(
             @Schema(description = "장소 이름", example = "독립문")
             String name,
 
-            @Schema(description = "지난주 방문 수", example = "12")
-            long visitCount
+            @Schema(description = "최근 7일 방문자 수 (사람 수. 한 사람이 여러 날 와도 1명)", example = "12")
+            long visitorCount
     ) {
     }
 }
