@@ -81,20 +81,27 @@ com.hackathon
 
 ### 이미 있는 것 (연동 틀)
 - 외부 호출은 `ExternalHttp.getJson()`으로 한다. 쿼리 값을 직접 인코딩하고(Decoding 키의 `+`·`/` 보호), 키가 든 URL·원본 예외는 로그·예외에 남기지 않는다
-- 지하철역 동기화는 실제 키로 확인했다 (784건). TourAPI·기상청 클라이언트는 문서 형식대로 짜 두었고 `TODO(키 발급 후)` 표시가 있다. 키를 받으면 실제 응답으로 필드명·성공 코드·서대문구 코드를 확인한다
+- TourAPI(서대문구 161건 중 관광지·문화시설·쇼핑 115건 수집)·기상청·T Data(역 784건) 모두 2026-11 실제 키로 응답 형식을 확인했다
 - 장소를 쓰는 기능은 `PlaceRepository.findAllByStatus(ACTIVE)`만 후보로 쓴다. 조회용 서비스 메서드(`PlaceService`)는 기능을 만들 때 `domain/place/service`에 추가한다
 
 ### 장소: TourAPI
-
-- **실행 시점**: 서버 시작 시 장소 테이블이 비어 있으면 1회 + `@Scheduled(cron = "${app.tour.sync-cron}", zone = "Asia/Seoul")`로 매일 1회. `app.tour.sync-enabled=false`면 둘 다 건너뛴다 (발표 전에는 끈다)
-- **필드 출처를 나눈다**
-  | 출처 | 필드 | 동기화 때 |
-  |---|---|---|
-  | TourAPI | `contentId`(유니크 키), 이름, 주소, 좌표, 개요, 대표 이미지, `modifiedTime` | 갱신 |
-  | 팀 보강 | 추천 시간대, 실내 여부, 현장 해설 원문, 민감한 역사 여부, 코스 | 덮어쓰지 않는다 |
-- 팀 보강 데이터는 API가 없으므로 `src/main/resources/data/place-curation.json`(`contentId` 기준 배열)으로 관리하고 동기화 때 합친다. 형식은 `PlaceCuration` 주석 참고. 보강을 고친 뒤에는 다음 동기화(또는 장소 테이블을 비우고 재시작) 때 반영된다
-- **upsert 규칙**: `contentId`로 찾아 있으면 TourAPI 필드만 갱신, 없으면 추가. `modifiedTime`이 바뀐 장소만 상세(개요)를 다시 받는다
-- **새 장소**는 팀 보강이 없으므로 `검수 전` 상태로 두고 추천·후보에서 뺀다. 보강 파일에 들어오면 노출한다
+- **실행 시점**: 서버를 켤 때마다 1회 + `@Scheduled(cron = "${app.tour.sync-cron}", zone = "Asia/Seoul")`로 매일 1회. 목록 호출 3번 + 바뀐 개요만이라 가볍다. `app.tour.sync-enabled=false`면 건너뛴다 (발표 전에는 꺼서 데이터를 고정한다)
+- **받는 타입** `app.tour.content-type-ids` = 관광지(12)·문화시설(14)·쇼핑(38). **바로 노출하는 타입** `app.tour.auto-active-type-ids` = 관광지·문화시설. 서대문형무소역사관·임시정부기념관은 문화시설로 분류돼 있다
+- **노출 규칙** (`Place.applyRules`, 동기화 때마다 다시 계산)
+  | 조건 | 상태 |
+  |---|---|
+  | 보강 파일 `excluded`에 있음 | `EXCLUDED` (공연장·영화관·어린이공원 등) |
+  | 보강 파일 `places`에 있음, 또는 자동 노출 타입 | `ACTIVE` |
+  | 그 외 (쇼핑 매장 등) | `PENDING_REVIEW` |
+  | 이번 목록에 없음 | `INACTIVE` |
+- **필드 출처**
+  | 출처 | 필드 |
+  |---|---|
+  | TourAPI | `contentId`(유니크 키), 이름, 주소, 좌표, 개요, 대표 이미지, `modifiedTime` |
+  | 보강 파일 (없으면 기본값) | 추천 시간대(문화시설 `MORNING,AFTERNOON` / 그 외 `MORNING,AFTERNOON,EVENING`), 실내 여부(문화시설이면 true), 민감한 역사 여부(false), 현장 해설 원문(null) |
+- **보강 파일** `src/main/resources/data/place-curation.json`: `{ excluded: [contentId…], excludedNames: [참고용 이름…], places: [{contentId, name, timeSlots?, indoor?, sensitiveHistory?, explanation?}] }`. 필요한 값만 적는다. 형식은 `PlaceCuration` 주석 참고. **고친 뒤 서버를 다시 켜면 반영된다**
+- 현장 해설(`explanation`)이 없는 장소는 해설 기능에서 TourAPI 개요로 대신하거나 후보에서 뺀다 (기능 구현 때 정한다)
+- 개요는 `ACTIVE` 장소 중 개요가 없거나 `modifiedTime`이 바뀐 것만 다시 받는다
 - **TourAPI에서 사라진 장소**는 지우지 않고 비활성으로 바꾼다 (방문 기록·한걸음이 placeId로 참조한다)
 - **실패해도 서버는 계속 돈다**: 호출 실패·키 없음이면 로그만 남기고 기존 DB 데이터를 유지한다
 - 테스트·목 모드에서는 외부 호출 없이 동작해야 한다 (키가 비어 있으면 건너뛰므로 테스트는 고정 데이터를 직접 넣는다)

@@ -1,6 +1,5 @@
 package com.hackathon.domain.place.service;
 
-import com.hackathon.domain.place.repository.PlaceRepository;
 import com.hackathon.domain.place.repository.StationRepository;
 import com.hackathon.global.config.AppProperties;
 import com.hackathon.global.external.ExternalApiException;
@@ -13,7 +12,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * 장소(TourAPI)·지하철역(T Data) 동기화 실행 시점.
- * - 서버 시작: 테이블이 비어 있을 때만 1회 (가상 스레드에서 돌려 부팅을 막지 않는다)
+ * - 서버 시작: 장소는 매번(보강 파일을 고치고 재시작하면 바로 반영), 역은 테이블이 비어 있을 때만
+ *   (가상 스레드에서 돌려 부팅을 막지 않는다)
  * - 매일 app.tour.sync-cron (기본 04:00): 둘 다
  * 키가 없거나 sync-enabled=false면 건너뛰고, 실패해도 기존 데이터를 유지한다. 관리자 API는 두지 않는다.
  */
@@ -24,19 +24,15 @@ public class DataSyncScheduler {
 
     private final PlaceSyncService placeSyncService;
     private final StationSyncService stationSyncService;
-    private final PlaceRepository placeRepository;
     private final StationRepository stationRepository;
     private final AppProperties properties;
 
     @EventListener(ApplicationReadyEvent.class)
-    public void syncIfEmpty() {
+    public void syncOnStartup() {
         boolean stations = stationRepository.count() == 0;
-        boolean places = placeRepository.count() == 0;
-        if (!stations && !places) return;
-
-        Thread.ofVirtual().name("initial-data-sync").start(() -> {
+        Thread.ofVirtual().name("startup-data-sync").start(() -> {
             if (stations) syncStations();
-            if (places) syncPlaces();
+            syncPlaces();
         });
     }
 

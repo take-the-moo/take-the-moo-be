@@ -51,6 +51,8 @@ public record AppProperties(
             @DefaultValue("410") String lDongSignguCd,
             // 받을 관광 타입: 12 관광지, 14 문화시설, 38 쇼핑(전통시장). 음식점(39)·숙박(32)은 받지 않는다
             @DefaultValue({"12", "14", "38"}) List<String> contentTypeIds,
+            // 받자마자 노출(ACTIVE)할 타입. 그 밖의 타입(쇼핑 등)은 보강 파일에 있는 곳만 노출한다
+            @DefaultValue({"12", "14"}) List<String> autoActiveTypeIds,
             // 발표 전에는 false로 꺼서 리허설한 데이터가 바뀌지 않게 한다
             @DefaultValue("true") boolean syncEnabled,
             // 매일 새벽 4시 (서울 시간)

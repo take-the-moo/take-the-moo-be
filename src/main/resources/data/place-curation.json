@@ -1,1 +1,15 @@
-[]
+{
+  "excluded": ["3078407", "1019327", "3076677", "130767", "2783484", "4092567", "2759917"],
+  "excludedNames": ["금호아트홀 연세", "긱 라이브하우스", "라이카시네마", "서대문도서관", "신기한놀이터 떼굴떼굴", "코코리컬러 연희본점", "은가어린이공원"],
+  "places": [
+    { "contentId": "130152", "name": "서대문형무소역사관", "timeSlots": ["MORNING", "AFTERNOON"], "indoor": true, "sensitiveHistory": true },
+    { "contentId": "127425", "name": "독립문" },
+    { "contentId": "2789102", "name": "독립문영천시장", "timeSlots": ["AFTERNOON", "EVENING"] },
+    { "contentId": "2773278", "name": "모래내시장 먹자골목", "timeSlots": ["AFTERNOON", "EVENING"] },
+    { "contentId": "2813170", "name": "국립대한민국임시정부기념관", "sensitiveHistory": true },
+    { "contentId": "128622", "name": "서대문독립공원", "sensitiveHistory": true },
+    { "contentId": "1828571", "name": "독립관", "sensitiveHistory": true },
+    { "contentId": "1825057", "name": "3.1독립선언기념탑", "sensitiveHistory": true },
+    { "contentId": "1829735", "name": "순국선열추념탑", "sensitiveHistory": true }
+  ]
+}

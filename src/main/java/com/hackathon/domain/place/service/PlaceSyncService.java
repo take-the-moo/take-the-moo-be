@@ -2,13 +2,13 @@ package com.hackathon.domain.place.service;
 
 import com.hackathon.domain.place.client.TourApiClient;
 import com.hackathon.domain.place.client.TourPlaceItem;
-import com.hackathon.domain.place.curation.PlaceCuration;
 import com.hackathon.domain.place.curation.PlaceCurationRegistry;
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.entity.PlaceStatus;
 import com.hackathon.domain.place.repository.PlaceRepository;
 import com.hackathon.global.config.AppProperties;
 import com.hackathon.global.external.ExternalApiException;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,9 +20,10 @@ import org.springframework.stereotype.Service;
 /**
  * TourAPI → place 테이블 동기화.
  * 1. 관광 타입별로 서대문구 목록을 전부 받는다 (하나라도 실패하면 DB를 건드리지 않고 중단)
- * 2. contentId로 upsert. TourAPI 필드만 갱신하고, 보강된 장소 중 개요가 없거나 modifiedtime이 바뀐 것만 개요를 받는다
+ * 2. contentId로 upsert하고 노출 규칙(Place.applyRules)을 적용한다
+ *    자동 노출 타입(관광지·문화시설)이나 보강 파일에 있으면 ACTIVE, excluded면 EXCLUDED, 그 외 PENDING_REVIEW
+ * 3. ACTIVE 장소 중 개요가 없거나 modifiedtime이 바뀐 것만 개요를 받는다
  *    (서대문구 쇼핑 타입은 백화점 매장·체인점이 대부분이라 전부 받으면 호출만 늘어난다)
- * 3. 팀 보강 파일에 있으면 ACTIVE, 없으면 PENDING_REVIEW
  * 4. 이번 목록에 없는 기존 장소는 INACTIVE (삭제하지 않는다)
  * 외부 호출이 길어 트랜잭션은 걸지 않는다 (장소마다 save가 각각 커밋된다).
  */
@@ -34,6 +35,7 @@ public class PlaceSyncService {
     private final PlaceRepository placeRepository;
     private final PlaceCurationRegistry curationRegistry;
     private final List<String> contentTypeIds;
+    private final List<String> autoActiveTypeIds;
 
     public PlaceSyncService(TourApiClient client, PlaceRepository placeRepository,
                             PlaceCurationRegistry curationRegistry, AppProperties properties) {
@@ -41,6 +43,7 @@ public class PlaceSyncService {
         this.placeRepository = placeRepository;
         this.curationRegistry = curationRegistry;
         this.contentTypeIds = properties.tour().contentTypeIds();
+        this.autoActiveTypeIds = properties.tour().autoActiveTypeIds();
     }
 
     public boolean isConfigured() {
@@ -57,15 +60,21 @@ public class PlaceSyncService {
         }
 
         int overviews = 0;
+        Map<PlaceStatus, Integer> statusCounts = new EnumMap<>(PlaceStatus.class);
         for (TourPlaceItem item : fetched.values()) {
             Place place = placeRepository.findByContentId(item.contentid())
                     .orElseGet(() -> Place.fromTour(item.contentid()));
-            PlaceCuration curation = curationRegistry.find(item.contentid()).orElse(null);
-            boolean needsOverview = curation != null && place.needsOverview(item.modifiedtime());
+            // updateTourInfo가 수정일을 바꾸기 전에 판단한다
+            boolean changed = place.needsOverview(item.modifiedtime());
             place.updateTourInfo(item.contenttypeid(), item.title(), item.fullAddress(),
                     Double.parseDouble(item.mapy()), Double.parseDouble(item.mapx()),
                     blankToNull(item.firstimage()), item.modifiedtime());
-            if (needsOverview) {
+            place.applyRules(curationRegistry.find(item.contentid()).orElse(null),
+                    autoActiveTypeIds.contains(item.contenttypeid()),
+                    curationRegistry.isExcluded(item.contentid()));
+            statusCounts.merge(place.getStatus(), 1, Integer::sum);
+
+            if (changed && place.getStatus() == PlaceStatus.ACTIVE) {
                 try {
                     client.fetchOverview(item.contentid()).ifPresent(place::updateOverview);
                     overviews++;
@@ -74,13 +83,12 @@ public class PlaceSyncService {
                     log.warn("장소 개요 조회 실패: contentId={}, {}", item.contentid(), e.getDetail());
                 }
             }
-            place.applyCuration(curation);
             placeRepository.save(place);
         }
 
         int deactivated = deactivateMissing(fetched.keySet());
-        log.info("장소 동기화 완료: 받은 {}건, 개요 갱신 {}건, 비활성 {}건, 보강 데이터 {}건",
-                fetched.size(), overviews, deactivated, curationRegistry.size());
+        log.info("장소 동기화 완료: 받은 {}건 {}, 개요 갱신 {}건, 목록에서 빠져 비활성 {}건, 보강 데이터 {}건",
+                fetched.size(), statusCounts, overviews, deactivated, curationRegistry.size());
         return fetched.size();
     }
 

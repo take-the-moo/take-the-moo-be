@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 /**
  * 장소. 필드 출처가 둘이다.
  * - TourAPI: 동기화 때마다 갱신 (contentId로 찾는다)
- * - 팀 보강: data/place-curation.json에서만 바뀐다. 동기화가 덮어쓰지 않는다
+ * - 팀 보강: data/place-curation.json 값, 없으면 타입별 기본값. 동기화 때마다 파일 기준으로 다시 계산한다
  * 다른 도메인은 이 엔티티를 연관관계로 묶지 말고 placeId(Long)로 참조한다.
  */
 @Getter
@@ -60,17 +60,17 @@ public class Place extends BaseTimeEntity {
     private String tourModifiedTime;
 
     // ── 팀 보강 ──────────────────────────────
-    /** 추천 방문 시간대. "MORNING,AFTERNOON" 형태 (값 정의는 추천 기능에서) */
+    /** 추천 방문 시간대. "MORNING,AFTERNOON" 형태 (MORNING 06–11 · AFTERNOON 11–17 · EVENING 17–21) */
     @Column(length = 100)
     private String recommendedTimeSlots;
 
-    /** 실내 여부. 비 오면 실내만 추천한다. 보강 전에는 null */
+    /** 실내 여부. 비 오면 실내만 추천한다 */
     private Boolean indoor;
 
     /** 식민지 역사가 얽힌 장소. 프롬프트에 "기억과 평화의 공간" 원칙을 건다 */
     private boolean sensitiveHistory;
 
-    /** 현장 해설 원문 (한국어). AI는 이걸 번역만 한다 */
+    /** 현장 해설 원문 (한국어). AI는 이걸 번역만 한다. 보강 파일에 없으면 null */
     @Lob
     private String explanation;
 
@@ -104,18 +104,31 @@ public class Place extends BaseTimeEntity {
         return overview == null || tourModifiedTime == null || !tourModifiedTime.equals(modifiedTime);
     }
 
-    /** curation이 있으면 보강 필드를 채우고 ACTIVE, 없으면 PENDING_REVIEW (보강 필드는 그대로 둔다) */
-    public void applyCuration(PlaceCuration curation) {
-        if (curation == null) {
-            this.status = PlaceStatus.PENDING_REVIEW;
-            return;
-        }
-        List<String> slots = curation.timeSlots() == null ? List.of() : curation.timeSlots();
+    static final String CULTURAL_FACILITY = "14";
+    static final List<String> DAYTIME = List.of("MORNING", "AFTERNOON");
+    static final List<String> ALL_DAY = List.of("MORNING", "AFTERNOON", "EVENING");
+
+    /**
+     * 노출 여부와 보강 필드를 정한다. 동기화 때마다 호출된다.
+     * 1. excluded → EXCLUDED
+     * 2. 보강 파일에 있거나 자동 노출 타입 → ACTIVE (보강 값이 없으면 기본값)
+     * 3. 그 외 → PENDING_REVIEW
+     * 기본값: 실내 = 문화시설이면 true / 시간대 = 문화시설은 낮(MORNING, AFTERNOON), 그 외는 하루 종일
+     */
+    public void applyRules(PlaceCuration curation, boolean autoActiveType, boolean excluded) {
+        boolean culturalFacility = CULTURAL_FACILITY.equals(contentTypeId);
+        List<String> slots = curation != null && curation.timeSlots() != null && !curation.timeSlots().isEmpty()
+                ? curation.timeSlots()
+                : culturalFacility ? DAYTIME : ALL_DAY;
+
         this.recommendedTimeSlots = String.join(",", slots);
-        this.indoor = curation.indoor();
-        this.sensitiveHistory = Boolean.TRUE.equals(curation.sensitiveHistory());
-        this.explanation = curation.explanation();
-        this.status = PlaceStatus.ACTIVE;
+        this.indoor = curation != null && curation.indoor() != null ? curation.indoor() : culturalFacility;
+        this.sensitiveHistory = curation != null && Boolean.TRUE.equals(curation.sensitiveHistory());
+        this.explanation = curation == null ? null : curation.explanation();
+
+        if (excluded) this.status = PlaceStatus.EXCLUDED;
+        else if (curation != null || autoActiveType) this.status = PlaceStatus.ACTIVE;
+        else this.status = PlaceStatus.PENDING_REVIEW;
     }
 
     public void deactivate() {

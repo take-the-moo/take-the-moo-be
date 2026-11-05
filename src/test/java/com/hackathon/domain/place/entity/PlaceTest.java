@@ -9,28 +9,67 @@ import org.junit.jupiter.api.Test;
 class PlaceTest {
 
     @Test
-    void 보강_데이터가_있으면_ACTIVE_없으면_검수_전() {
-        Place place = Place.fromTour("100");
-        assertThat(place.getStatus()).isEqualTo(PlaceStatus.PENDING_REVIEW);
+    void 자동_노출_타입은_보강_없이도_ACTIVE_기본값_적용() {
+        Place museum = tourPlace("14");
+        museum.applyRules(null, true, false);
 
-        place.applyCuration(new PlaceCuration("100", "서대문형무소역사관",
-                List.of("MORNING", "AFTERNOON"), true, true, "해설 원문"));
+        assertThat(museum.getStatus()).isEqualTo(PlaceStatus.ACTIVE);
+        assertThat(museum.getIndoor()).isTrue();
+        assertThat(museum.getRecommendedTimeSlots()).isEqualTo("MORNING,AFTERNOON");
+        assertThat(museum.isSensitiveHistory()).isFalse();
+        assertThat(museum.getExplanation()).isNull();
 
-        assertThat(place.getStatus()).isEqualTo(PlaceStatus.ACTIVE);
-        assertThat(place.getRecommendedTimeSlots()).isEqualTo("MORNING,AFTERNOON");
-        assertThat(place.getIndoor()).isTrue();
-        assertThat(place.isSensitiveHistory()).isTrue();
-        assertThat(place.getExplanation()).isEqualTo("해설 원문");
+        Place park = tourPlace("12");
+        park.applyRules(null, true, false);
+
+        assertThat(park.getIndoor()).isFalse();
+        assertThat(park.getRecommendedTimeSlots()).isEqualTo("MORNING,AFTERNOON,EVENING");
+    }
+
+    @Test
+    void 보강_값이_있으면_기본값보다_우선() {
+        Place prison = tourPlace("14");
+        prison.applyRules(new PlaceCuration("100", "서대문형무소역사관",
+                List.of("MORNING"), null, true, "해설 원문"), true, false);
+
+        assertThat(prison.getStatus()).isEqualTo(PlaceStatus.ACTIVE);
+        assertThat(prison.getRecommendedTimeSlots()).isEqualTo("MORNING");
+        assertThat(prison.getIndoor()).isTrue(); // indoor는 안 적어서 문화시설 기본값
+        assertThat(prison.isSensitiveHistory()).isTrue();
+        assertThat(prison.getExplanation()).isEqualTo("해설 원문");
+    }
+
+    @Test
+    void 자동_노출_타입이_아니면_보강된_곳만_노출() {
+        Place shop = tourPlace("38");
+        shop.applyRules(null, false, false);
+        assertThat(shop.getStatus()).isEqualTo(PlaceStatus.PENDING_REVIEW);
+
+        Place market = tourPlace("38");
+        market.applyRules(new PlaceCuration("100", "영천시장", null, null, null, null), false, false);
+        assertThat(market.getStatus()).isEqualTo(PlaceStatus.ACTIVE);
+    }
+
+    @Test
+    void 제외_목록이_가장_우선() {
+        Place hall = tourPlace("14");
+        hall.applyRules(null, true, true);
+        assertThat(hall.getStatus()).isEqualTo(PlaceStatus.EXCLUDED);
     }
 
     @Test
     void 수정일이_바뀌었을_때만_개요를_다시_받는다() {
-        Place place = Place.fromTour("100");
-        place.updateTourInfo("12", "독립문", "서울", 37.57, 126.95, null, "20260101000000");
+        Place place = tourPlace("12");
         assertThat(place.needsOverview("20260101000000")).isTrue(); // 개요가 아직 없다
 
         place.updateOverview("개요");
         assertThat(place.needsOverview("20260101000000")).isFalse();
         assertThat(place.needsOverview("20261105000000")).isTrue();
+    }
+
+    private static Place tourPlace(String contentTypeId) {
+        Place place = Place.fromTour("100");
+        place.updateTourInfo(contentTypeId, "장소", "서울", 37.57, 126.95, null, "20260101000000");
+        return place;
     }
 }
