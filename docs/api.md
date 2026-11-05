@@ -249,6 +249,81 @@ F1 처음 설정. 국적·언어로 익명 사용자를 만든다. 응답의 `us
 
 ---
 
+### GET /api/stations
+
+F2 역 선택 목록. 위치 권한을 거부했거나 데모에서 기준 역을 고를 때 보여 준다. 고른 역의 `stationId`를 `GET /api/now`·`GET /api/places/nearby`에 보낸다.
+
+요청 파라미터 없음.
+
+```bash
+curl 'localhost:8080/api/stations'
+```
+
+응답 200
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": [
+    { "stationId": 12, "name": "독립문", "line": "3호선", "isDefault": true },
+    { "stationId": 13, "name": "무악재", "line": "3호선", "isDefault": false },
+    { "stationId": 40, "name": "신촌", "line": "2호선", "isDefault": false },
+    { "stationId": 41, "name": "신촌", "line": "경의중앙선", "isDefault": false }
+  ]
+}
+```
+
+- 서대문 생활권 역을 정해진 순서로 준다: 독립문 · 무악재 · 홍제 · 서대문 · 충정로(경기대입구) · 아현 · 이대 · 신촌 · 가좌. 거리로 거르지 않는다
+- 같은 이름의 역은 호선마다 따로 온다. 위치가 다르므로 `stationId`로 구분한다 (예: 신촌 2호선 ≠ 신촌 경의중앙선)
+- `isDefault: true`는 아무 역도 고르지 않았을 때 서버가 기준으로 쓰는 역이다 (독립문). 처음에 이 역을 선택된 상태로 보여 주면 된다
+- 서버에 역 데이터가 아직 없으면 빈 배열이 온다. 이때도 `GET /api/now`는 기본 역 기준으로 동작한다
+
+---
+
+### GET /api/places/nearby
+
+F4 주변 장소. 현장 해설을 볼 수 있는 장소를 가까운 순으로 준다. 고른 장소의 `placeId`를 `POST /api/explanations`에 보낸다.
+
+쿼리 (모두 선택)
+
+| 이름 | 설명 |
+|---|---|
+| lat, lng | 현재 위치 (위도·경도). 둘을 함께 보낸다 |
+| stationId | `GET /api/stations`에서 고른 역. `lat`·`lng`가 있으면 무시한다 |
+| limit | 개수. 기본 5, 최대 20 (범위를 벗어나면 1~20으로 맞춘다) |
+
+기준 위치 = `lat`·`lng` → 없으면 `stationId` → 둘 다 없으면 기본 역(독립문).
+
+```bash
+curl 'localhost:8080/api/places/nearby?lat=37.5745&lng=126.9577&limit=3'
+curl 'localhost:8080/api/places/nearby?stationId=12'
+```
+
+응답 200
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": [
+    { "placeId": 34, "name": "서대문형무소역사관", "imageUrl": "https://tong.visitkorea.or.kr/cms/resource/example/prison.jpg", "distanceMeters": 197 },
+    { "placeId": 4, "name": "독립문", "imageUrl": "https://tong.visitkorea.or.kr/cms/resource/example/gate.jpg", "distanceMeters": 287 },
+    { "placeId": 51, "name": "독립문영천시장", "imageUrl": null, "distanceMeters": 412 }
+  ]
+}
+```
+
+- 노출 중이고 해설 원문(팀이 쓴 해설 또는 TourAPI 개요)이 있는 장소만 온다. 거리 제한은 없다
+- `distanceMeters`는 직선거리(미터)다. `imageUrl`은 없으면 `null`
+- 위치(`lat`·`lng`)는 계산에만 쓰고 서버에 저장하거나 로그에 남기지 않는다
+
+오류: 422 `STATION_INVALID_LOCATION`(`lat`·`lng` 중 하나만 옴, 범위 밖), 404 `STATION_NOT_FOUND`(없는 stationId), 400 `COMMON_INVALID_REQUEST`(숫자가 아닌 값)
+
+---
+
 ### POST /api/photos
 
 사진 업로드 (F4·F6·F7 공통). 받은 `photoId`를 한걸음·엽서 요청에 넣는다.
@@ -634,6 +709,7 @@ F5 방문 도장. 장소 근처(기본 200m)에 있으면 도장을 찍고, 이�
 | 404 | `COMMON_NOT_FOUND` | 없는 경로 |
 | 404 | `USER_NOT_FOUND` | 없는 userId |
 | 404 | `PLACE_NOT_FOUND` | 없거나 노출하지 않는 장소 |
+| 404 | `STATION_NOT_FOUND` | 없는 stationId |
 | 403 | `PHOTO_FORBIDDEN` | 다른 사용자의 사진을 한걸음·엽서에 쓰려 함 |
 | 404 | `PHOTO_NOT_FOUND` | 없는 photoId |
 | 404 | `POSTCARD_NOT_FOUND` | 없는 postcardId |
@@ -643,6 +719,7 @@ F5 방문 도장. 장소 근처(기본 200m)에 있으면 도장을 찍고, 이�
 | 415 | `COMMON_UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 422 | `COMMON_VALIDATION_FAILED` | 값 검증 실패 (빈 메시지, 길이 초과, 이미지 형식·크기). message에 필드별 사유 |
 | 422 | `SCENE_SOURCE_MISSING` | 장소에 이야기를 만들 설명(해설·개요)이 없음 |
+| 422 | `STATION_INVALID_LOCATION` | `lat`·`lng` 중 하나만 오거나 범위(위도 ±90, 경도 ±180)를 벗어남 |
 | 422 | `REVIEW_INAPPROPRIATE` | 한걸음에 욕설·혐오·광고·연락처가 있음. 저장되지 않는다 |
 | 422 | `VISIT_TOO_FAR` | 장소에서 멀어 도장을 받을 수 없음 |
 | 500 | `COMMON_INTERNAL_ERROR` | 서버 내부 오류 |
