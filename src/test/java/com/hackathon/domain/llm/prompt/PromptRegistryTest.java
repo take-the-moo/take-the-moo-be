@@ -12,7 +12,8 @@ class PromptRegistryTest {
 
     private final PromptRegistry registry = new PromptRegistry(new PromptProperties(Map.of(
             "greet", new PromptProperties.Spec("claude-haiku-5-5", 0.5, 100,
-                    "너는 {target}을 돕는다. 말투: {tone}. 없는 변수: {unknown}", Map.of("tone", "친절")))));
+                    "너는 {target}을 돕는다. 말투: {tone}. 없는 변수: {unknown}", Map.of("tone", "친절"),
+                    "low", "disabled"))));
 
     @Test
     void params가_defaults보다_우선하고_없는_변수는_그대로_둔다() {
@@ -21,6 +22,8 @@ class PromptRegistryTest {
         assertThat(prompt.system()).isEqualTo("너는 학생을 돕는다. 말투: 친절. 없는 변수: {unknown}");
         assertThat(prompt.model()).isEqualTo("claude-haiku-5-5");
         assertThat(prompt.maxTokens()).isEqualTo(100);
+        assertThat(prompt.effort()).isEqualTo("low");
+        assertThat(prompt.thinking()).isEqualTo("disabled");
     }
 
     @Test

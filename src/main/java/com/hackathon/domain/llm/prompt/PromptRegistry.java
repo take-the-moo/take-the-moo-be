@@ -34,7 +34,7 @@ public class PromptRegistry {
         if (params != null) variables.putAll(params);
 
         return new LlmPrompt(promptKey, spec.model(), spec.temperature(), spec.maxTokens(),
-                render(promptKey, spec.system(), variables));
+                render(promptKey, spec.system(), variables), spec.effort(), spec.thinking());
     }
 
     public Set<String> keys() {

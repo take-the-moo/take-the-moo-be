@@ -1,10 +1,13 @@
 package com.hackathon.domain.place.service;
 
+import com.hackathon.domain.place.curation.PlaceConnection;
+import com.hackathon.domain.place.curation.PlaceConnectionRegistry;
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.entity.PlaceStatus;
 import com.hackathon.domain.place.exception.PlaceErrorType;
 import com.hackathon.domain.place.exception.PlaceException;
 import com.hackathon.domain.place.repository.PlaceRepository;
+import com.hackathon.global.common.Nationality;
 import com.hackathon.global.util.GeoUtils;
 import java.util.Comparator;
 import java.util.Collection;
@@ -23,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PlaceService {
 
     private final PlaceRepository placeRepository;
+    private final PlaceConnectionRegistry placeConnectionRegistry;
 
     /** 노출 중(ACTIVE)인 장소. 없거나 노출하지 않는 장소면 404 PLACE_NOT_FOUND */
     public Place getActivePlace(Long placeId) {
@@ -70,5 +74,13 @@ public class PlaceService {
     public Optional<Place> findActiveByContentId(String contentId) {
         return placeRepository.findByContentId(contentId)
                 .filter(place -> place.getStatus() == PlaceStatus.ACTIVE);
+    }
+
+    /**
+     * 내 나라 연결 (F2 추천 이유·F3 한 줄 연결): 이 장소와 비슷한 그 나라의 사례. 사람이 검토한 data/place-connections.json에서 읽는다.
+     * 없는 조합·OTHER면 빈 값 → AI는 특정 사례 이름 없이 공통된 경험으로 잇는다
+     */
+    public Optional<PlaceConnection> findConnection(Place place, Nationality nationality) {
+        return placeConnectionRegistry.find(place.getContentId(), nationality);
     }
 }

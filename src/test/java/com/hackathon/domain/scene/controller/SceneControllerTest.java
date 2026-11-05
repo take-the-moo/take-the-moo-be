@@ -2,13 +2,20 @@ package com.hackathon.domain.scene.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.hackathon.domain.place.curation.PlaceConnection;
 import com.hackathon.domain.place.curation.PlaceCuration;
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.repository.PlaceRepository;
+import com.hackathon.domain.place.service.PlaceService;
+import com.hackathon.global.common.Nationality;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -33,6 +41,9 @@ class SceneControllerTest {
 
     @Autowired
     PlaceRepository placeRepository;
+
+    @MockitoSpyBean
+    PlaceService placeService;
 
     private Place savePlace(String name, String overview, boolean active) {
         Place place = Place.fromTour(String.valueOf(CONTENT_ID.incrementAndGet()));
@@ -71,6 +82,18 @@ class SceneControllerTest {
             requestScene(place.getId(), "VN", "VI")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.cached").value(true));
+        }
+
+        @Test
+        void 내_나라_연결_데이터가_바뀌면_장면을_다시_만든다() throws Exception {
+            Place place = savePlace("시장", "오래된 시장이다.", true);
+            requestScene(place.getId(), "VN", "VI").andExpect(jsonPath("$.data.cached").value(false));
+            requestScene(place.getId(), "VN", "VI").andExpect(jsonPath("$.data.cached").value(true));
+
+            doReturn(Optional.of(new PlaceConnection("호찌민 벤탄 시장", "Chợ Bến Thành", "오래된 시장")))
+                    .when(placeService).findConnection(any(), eq(Nationality.VN));
+
+            requestScene(place.getId(), "VN", "VI").andExpect(jsonPath("$.data.cached").value(false));
         }
 
         @Test

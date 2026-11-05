@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.entity.PlaceStatus;
 import com.hackathon.domain.place.repository.PlaceRepository;
+import com.hackathon.global.common.Nationality;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,5 +46,14 @@ class PlaceServiceTest {
                 .filter(p -> p.getId().equals(active)).findFirst().orElseThrow();
 
         assertThat(place.getTimeSlots()).isNotEmpty();
+    }
+
+    @Test
+    void 장소와_국적으로_내_나라_연결을_찾는다() {
+        Place prison = Place.fromTour("130152"); // 서대문형무소역사관 (data/place-connections.json)
+
+        assertThat(placeService.findConnection(prison, Nationality.VN)).isPresent();
+        assertThat(placeService.findConnection(prison, Nationality.OTHER)).isEmpty();
+        assertThat(placeService.findConnection(Place.fromTour("400009"), Nationality.VN)).isEmpty();
     }
 }

@@ -33,11 +33,11 @@ docker compose down
 
 ### Coolify 배포
 
-`compose.coolify.yml`을 쓴다. 포트를 공개하지 않고, 값은 전부 Coolify 환경변수로 받는다 (`deploy/application.yml`에 값을 쓰지 않는다).
+`compose.coolify.yml`을 쓴다. API만 서버의 `API_PORT`(기본 8081)로 공개하고 MySQL은 공개하지 않는다. 값은 전부 Coolify 환경변수로 받는다 (`deploy/application.yml`에 값을 쓰지 않는다).
 
 1. Build Pack은 Docker Compose, Docker compose location은 `/compose.coolify.yml`
 2. Environment Variables: `DB_PASSWORD`, `MYSQL_ROOT_PASSWORD`(필수), `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `APP_TOUR_SERVICE_KEY`, `APP_STATION_API_KEY`, `APP_WEATHER_KMA_SERVICE_KEY`, `LLM_MOCK`
-3. Domains에서 `api` 서비스에 `https://주소:8080` 연결
+3. 접속: `http://서버주소:8081`. 서버 방화벽에서 이 포트가 열려 있어야 한다. 도메인을 쓰면 Domains에서 `api` 서비스에 `https://주소:8080`을 연결한다
 
 ### 목 모드
 

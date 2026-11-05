@@ -12,10 +12,10 @@ public record RecommendChoice(
         @Schema(description = "candidates 중 고른 장소의 placeId")
         Long placeId,
 
-        @Schema(description = "요청 언어로 쓴 추천 이유 한 문장")
+        @Schema(description = "요청 언어로 쓴 추천 이유 딱 한 문장")
         String reason,
 
-        @Schema(description = "같은 내용의 쉬운 한국어 한 문장")
+        @Schema(description = "reason을 쉬운 한국어로 옮긴 한 문장. reason에 든 비슷한 사례 이름을 빼지 않는다")
         String reasonKo
 ) {
 
