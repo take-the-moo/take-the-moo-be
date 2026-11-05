@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#
+# pre-commit — AGENTS.md 절대 규칙 강제 (API 키·.env 커밋 금지)
+#   1. .env 파일 staged 차단 (.env.example은 허용)
+#   2. 추가되는 변경에 Anthropic API 키(sk-ant-…) 패턴이 있으면 차단
+#   3. application*.yml, prompts.yml에 api-key 등 리터럴 시크릿 값 차단 (${ENV} 플레이스홀더는 허용)
+#
+
+set -u
+
+# 1. .env 파일 자체가 staged 되었는지 확인
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+env_files="$(echo "$staged" | grep -E '(^|/)\.env(\..*)?$' | grep -vE '(^|/)\.env\.example$' || true)"
+if [ -n "$env_files" ]; then
+    echo "[pre-commit] 차단: .env 파일이 staged 되어 있습니다. git restore --staged 로 빼세요:" >&2
+    echo "$env_files" >&2
+    exit 1
+fi
+
+# 2. Anthropic API 키 패턴 (훅 파일 자체는 패턴 정의라 제외)
+key_lines="$(git diff --cached -U0 -- . ':(exclude).githooks' | grep -E '^\+' | grep -E 'sk-ant-[A-Za-z0-9_-]{8,}' || true)"
+if [ -n "$key_lines" ]; then
+    echo "[pre-commit] 차단: staged 변경에 Anthropic API 키(sk-ant-…)가 있습니다. 환경변수 ANTHROPIC_API_KEY로 옮기세요." >&2
+    exit 1
+fi
+
+# 3. 설정 파일의 리터럴 시크릿 값. ${ENV}와 ${ENV:기본값}, 빈 값은 허용한다
+yml_secrets="$(git diff --cached -U0 -- '*application*.yml' '*application*.yaml' '*prompts.yml' | grep -E '^\+' \
+    | grep -iE '(api[-_]?key|secret|password|token)\s*:' \
+    | grep -viE '(api[-_]?key|secret|password|token)\s*:\s*("?\$\{[^}]*\}"?)?\s*(#.*)?$' || true)"
+if [ -n "$yml_secrets" ]; then
+    echo "[pre-commit] 차단: 설정 파일에 리터럴 시크릿 값이 있습니다. \${ENV_VAR} 플레이스홀더를 쓰세요:" >&2
+    echo "$yml_secrets" | sed -E 's/(:\s*).{4}.*/\1****/' >&2
+    exit 1
+fi
+
+exit 0

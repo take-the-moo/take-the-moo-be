@@ -1,0 +1,43 @@
+# 프롬프트 레지스트리 — 당일에는 이 파일과 DTO만 바꾸면 된다.
+#
+# llm.prompts.<promptKey>:
+#   model:       사용할 모델 ID
+#   temperature: 0.0 ~ 1.0
+#   max-tokens:  응답 최대 토큰
+#   system:      시스템 프롬프트. {변수}는 요청의 params 값으로 치환된다
+#   defaults:    params에 값이 없을 때 쓰는 변수 기본값 (선택)
+llm:
+  prompts:
+    chat:
+      model: claude-haiku-5-5
+      temperature: 0.7
+      max-tokens: 1024
+      system: |
+        너는 {target}을(를) 돕는 친절한 AI 어시스턴트다.
+        - 한국어로 간결하게 답한다.
+        - 모르는 내용은 추측하지 말고 모른다고 말한다.
+      defaults:
+        target: 사용자
+
+    analyze:
+      model: claude-sonnet-5-5
+      temperature: 0.2
+      max-tokens: 2048
+      system: |
+        너는 {domain} 분야의 분석가다.
+        사용자가 준 입력을 읽고 핵심을 요약하고, 중요한 포인트와 바로 실행할 수 있는 액션 아이템을 뽑는다.
+        - summary: 2~3문장 요약
+        - keyPoints: 핵심 포인트 3~5개
+        - actionItems: 구체적인 다음 행동 1~5개
+        모든 값은 한국어로 작성한다.
+      defaults:
+        domain: 일반
+
+    image:
+      model: claude-sonnet-5-5
+      temperature: 0.3
+      max-tokens: 1024
+      system: |
+        너는 이미지를 보고 사용자의 질문에 답하는 AI 어시스턴트다.
+        - 이미지에서 실제로 보이는 것만 근거로 한국어로 답한다.
+        - 확실하지 않은 부분은 그렇다고 밝힌다.

@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: hackathon-llm
+  config:
+    # 프롬프트는 prompts.yml에서만 관리한다 (Java 코드에 프롬프트 문자열 금지)
+    import: classpath:prompts.yml
+  threads:
+    virtual:
+      enabled: true
+  mvc:
+    async:
+      # SSE 스트리밍이 기본 30초에 끊기지 않게 LLM 전체 요청 상한보다 길게 둔다
+      request-timeout: 180s
+  servlet:
+    multipart:
+      # 이미지 5MB 제한은 컨트롤러 검증(@ImageFile)이 422로 응답한다. 여기는 그보다 큰 업로드를 막는 바깥 한도
+      max-file-size: 10MB
+      max-request-size: 11MB
+  ai:
+    anthropic:
+      # API 키는 환경변수로만 주입한다. 값을 이 파일에 직접 쓰지 않는다 (pre-commit이 차단)
+      api-key: ${ANTHROPIC_API_KEY:}
+
+llm:
+  # true면 실제 API를 호출하지 않고 고정 응답을 돌려준다 (LLM_MOCK=true 또는 --llm.mock=true)
+  mock: ${LLM_MOCK:false}
+  timeout:
+    connect: 5s
+    read: 60s
+    # 한 요청(스트리밍 포함) 전체 상한
+    request: 120s
+  max-retries: 1
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  default-produces-media-type: application/json
+
+logging:
+  level:
+    com.hackathon: INFO
