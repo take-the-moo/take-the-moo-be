@@ -31,13 +31,13 @@ docker compose down
 - `api`는 `mysql`이 healthy가 된 뒤 뜬다. DB 데이터는 `mysql-data` 볼륨에 남고, 지우려면 `docker compose down -v`
 - 환경변수가 yml보다 우선하므로 셸에 `LLM_MOCK`가 남아 있으면 `application.yml`의 `llm.mock`이 무시된다
 
-### Coolify 배포
+### AWS 배포
 
-`compose.coolify.yml`을 쓴다. API만 서버의 `API_PORT`(기본 8081)로 공개하고 MySQL은 공개하지 않는다. 값은 전부 Coolify 환경변수로 받는다 (`deploy/application.yml`에 값을 쓰지 않는다).
+EC2 한 대에서 `compose.yml`을 그대로 띄운다. 지금 서버는 `http://3.36.178.51:8080`. 자세한 건 [docs/deploy.md](docs/deploy.md).
 
-1. Build Pack은 Docker Compose, Docker compose location은 `/compose.coolify.yml`
-2. Environment Variables: `DB_PASSWORD`, `MYSQL_ROOT_PASSWORD`(필수), `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `APP_TOUR_SERVICE_KEY`, `APP_STATION_API_KEY`, `APP_WEATHER_KMA_SERVICE_KEY`, `LLM_MOCK`
-3. 접속: `http://서버주소:8081`. 서버 방화벽에서 이 포트가 열려 있어야 한다. 도메인을 쓰면 Domains에서 `api` 서비스에 `https://주소:8080`을 연결한다
+```bash
+scripts/deploy-ec2.sh ubuntu@3.36.178.51 -i ~/.ssh/take-the-moo-key.pem   # 배포·재배포
+```
 
 ### 목 모드
 
