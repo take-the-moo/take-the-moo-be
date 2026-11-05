@@ -3,3 +3,13 @@ spring:
   datasource:
     # 계정은 main의 기본값을 그대로 쓴다 (인메모리 H2는 처음 붙는 계정으로 생성된다)
     url: jdbc:h2:mem:test;MODE=MySQL;DATABASE_TO_LOWER=TRUE
+
+app:
+  # 로컬 application.yml에 실제 키가 있어도 테스트는 외부 API를 부르지 않는다 (테스트가 장소·역을 직접 넣는다)
+  tour:
+    sync-enabled: false
+  station:
+    sync-enabled: false
+  sample:
+    # 샘플 한걸음은 테스트에서 넣지 않는다 (SampleReviewSeederTest가 직접 부른다)
+    reviews-enabled: false

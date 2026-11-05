@@ -42,4 +42,23 @@ class UserServiceTest {
         String id = userService.create(new UserCreateRequestDto(Nationality.CN, Language.ZH)).userId();
         assertThat(appUserRepository.findById(id)).hasValueSatisfying(user -> assertThat(user.isSample()).isFalse());
     }
+    @Test
+    void 국적별_샘플_사용자는_하나만_만든다() {
+        String first = userService.getOrCreateSampleUser(Nationality.UZ);
+        String second = userService.getOrCreateSampleUser(Nationality.UZ);
+
+        assertThat(second).isEqualTo(first);
+        assertThat(appUserRepository.findById(first)).hasValueSatisfying(user -> {
+            assertThat(user.isSample()).isTrue();
+            assertThat(user.getLanguage()).isEqualTo(Language.UZ);
+        });
+    }
+
+    @Test
+    void 샘플_사용자만_골라낸다() {
+        String sample = userService.getOrCreateSampleUser(Nationality.MN);
+        String real = userService.create(new UserCreateRequestDto(Nationality.MN, Language.MN)).userId();
+
+        assertThat(userService.getSampleUserIds(List.of(sample, real, "no-such-user"))).containsExactly(sample);
+    }
 }

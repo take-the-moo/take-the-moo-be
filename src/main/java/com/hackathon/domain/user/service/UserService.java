@@ -9,6 +9,7 @@ import com.hackathon.domain.user.repository.AppUserRepository;
 import com.hackathon.global.common.Nationality;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -45,5 +46,24 @@ public class UserService {
         if (userIds.isEmpty()) return Map.of();
         return appUserRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(AppUser::getId, AppUser::getNationality));
+    }
+
+    /** 주어진 사용자 중 샘플 사용자 id (화면에서 샘플 표시용). 없는 userId는 빠진다 */
+    public Set<String> getSampleUserIds(Collection<String> userIds) {
+        if (userIds.isEmpty()) return Set.of();
+        return appUserRepository.findAllByIdInAndSampleTrue(userIds).stream()
+                .map(AppUser::getId)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * 국적별 샘플 사용자 id. 없으면 만든다 (언어는 그 국적의 기본 언어).
+     * 샘플 한걸음(F6)과 샘플 방문 기록(F5)이 같이 쓴다 — 국적마다 하나만 있다.
+     */
+    @Transactional
+    public String getOrCreateSampleUser(Nationality nationality) {
+        return appUserRepository.findFirstBySampleTrueAndNationalityOrderByCreatedAtAsc(nationality)
+                .orElseGet(() -> appUserRepository.save(AppUser.sample(nationality, nationality.getDefaultLanguage())))
+                .getId();
     }
 }
