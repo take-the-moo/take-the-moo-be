@@ -36,7 +36,7 @@ Swagger: http://localhost:8080/swagger-ui.html · 프론트 명세: `docs/api.md
 | 사진 (F4·F6·F7) | `domain/photo` | `POST /api/photos` | - |
 | F5 방문 도장·기록 | `domain/visit` | `POST /api/visits`, `GET /api/users/{userId}/visits` | - |
 | F6 흔적 지도·한걸음 | `domain/review`, `domain/visit` | `GET /api/map/pins`, `GET·POST /api/places/{placeId}/reviews` | 한걸음 번역, 욕설·광고 필터 |
-| F7 회고 엽서 | `domain/postcard` | `POST /api/postcards`, `GET /api/postcards/{postcardId}` | 사진 4장 + 소감 + 그림체 → 엽서 이미지 (OpenAI) |
+| F7 회고 엽서 | `domain/postcard` | `POST /api/postcards`, `GET /api/postcards/{postcardId}`, `GET /api/postcards/{postcardId}/image` | 사진 1장을 템플릿 그림체로 다시 그린다 (OpenAI). 제목(사용자 언어로 날짜·장소)과 한 문장은 서버가 템플릿에 쓴다 |
 | 장소·역 데이터 | `domain/place` | (TourAPI 스케줄 동기화 + 팀 보강 데이터) | - |
 | 공통 | `global`, `domain/llm` | `GET /api/health` | - |
 

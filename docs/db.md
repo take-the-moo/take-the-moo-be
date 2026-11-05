@@ -21,7 +21,6 @@
 | `explanation_translation` | `ExplanationTranslation` | `domain/place` | F4 | 구현 전 |
 | `scene` | `Scene` | `domain/scene` | F3 | 구현됨 |
 | `postcard` | `Postcard` | `domain/postcard` | F7 | 구현 전 |
-| `postcard_photo` | `Postcard`의 컬렉션 | `domain/postcard` | F7 | 구현 전 |
 
 점선은 ID로만 참조하는 관계다. 외래 키는 만들지 않는다. `station`은 다른 테이블과 연결되지 않는다.
 
@@ -39,8 +38,7 @@ erDiagram
   place ||..o{ explanation_translation : "place_id"
   review ||..o{ review_translation : "review_id"
   photo |o..o{ review : "photo_id"
-  postcard ||..|{ postcard_photo : "postcard_id"
-  photo ||..o{ postcard_photo : "photo_id"
+  photo ||..o{ postcard : "photo_id"
   station {
     bigint id PK
     string station_code UK
@@ -50,7 +48,7 @@ erDiagram
 ## 공통 규칙
 
 ### 꼭 지킬 것
-1. **외래 키와 JPA 연관관계를 쓰지 않는다.** `@ManyToOne` 대신 `Long placeId`, `String userId`로 참조하고, 존재 여부는 서비스에서 확인한다. 같은 애그리거트 안의 `@ElementCollection`(`place_time_slot`, `postcard_photo`)만 예외다.
+1. **외래 키와 JPA 연관관계를 쓰지 않는다.** `@ManyToOne` 대신 `Long placeId`, `String userId`로 참조하고, 존재 여부는 서비스에서 확인한다. 같은 애그리거트 안의 `@ElementCollection`(`place_time_slot`)만 예외다.
 2. **다른 도메인 데이터는 그 도메인의 service로 가져온다.** 다른 도메인의 repository나 엔티티를 JPQL에서 직접 쓰지 않는다.
 3. **위치(lat/lng)를 어떤 테이블에도 저장하지 않는다.** `place`와 `station`의 좌표만 예외다.
 4. **쉼표로 여러 값을 넣지 않는다.** 여러 값이면 테이블을 나눈다.
@@ -118,7 +116,7 @@ docker compose down -v
 
 - `Place.getTimeSlots()`로 읽는다. 값은 `global/common/TimeSlot`이다.
 - 장소 동기화 때 채워진다. TourAPI 키가 없거나 동기화를 끄면 새로 채워지지 않는다.
-- `PlaceSyncService`가 트랜잭션 없이 돌기 때문에 `EAGER`로 읽는다. `postcard_photo`처럼 트랜잭션 안에서만 읽는 컬렉션은 기본값(LAZY)을 쓴다.
+- `PlaceSyncService`가 트랜잭션 없이 돌기 때문에 `EAGER`로 읽는다. 트랜잭션 안에서만 읽는 컬렉션을 새로 만들면 기본값(LAZY)을 쓴다.
 
 ### `station` 지하철역
 | 컬럼 | 타입 | NULL | 설명 |
@@ -143,6 +141,7 @@ docker compose down -v
 
 - 인덱스: (`user_id`, `created_at`)
 - 오늘 찍은 사진은 `created_at`이 `SeoulTime.today()` 범위인 행으로 찾는다. 날짜 컬럼을 따로 두지 않는다.
+- 업로드는 10MB 이하 jpeg·png·webp만 받는다 (`@ImageFile(maxBytes = ...)`). HEIC는 받지 않는다.
 
 ### `visit` 방문 도장
 | 컬럼 | 타입 | NULL | 설명 |
@@ -210,26 +209,23 @@ docker compose down -v
 - 사용자의 국적이 아니라 요청한 국적으로 캐시한다. 그래서 `app_user`의 복사본이 아니다.
 
 ### `postcard` 회고 엽서
+사진 1장 + 한 문장을 팀이 만든 템플릿에 넣어 이미지 한 장(JPEG)으로 만든다. AI(OpenAI)는 사진을 템플릿 그림체로 다시 그리기만 하고, 제목(사용자 언어로 날짜·장소)과 한 문장은 서버가 템플릿 글꼴로 쓴다.
+
 | 컬럼 | 타입 | NULL | 설명 |
 |---|---|---|---|
 | `id` | VARCHAR(36) PK | N | UUID |
 | `user_id` | VARCHAR(36) | N | |
-| `comment` | VARCHAR(100) | N | 소감 |
-| `style` | ENUM | N | 그림체 |
+| `photo_id` | VARCHAR(36) | N | 엽서에 쓴 사진. 요청한 사용자의 사진이어야 한다 |
+| `comment` | VARCHAR(100) | N | 사용자가 쓴 한 문장. 템플릿 글씨 칸에 맞춰 더 줄일 수 있다 |
+| `template` | ENUM | N | 템플릿. 처음엔 1개, 나중에 2~3개 |
 | `status` | ENUM | N | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED` |
-| `image_name` | VARCHAR(100) | Y | 완료된 파일 이름 |
+| `image_name` | VARCHAR(100) | Y | 완료된 파일 이름 (`app.storage.dir`) |
 | `error_code` | VARCHAR(50) | Y | 실패 사유 |
 
-인덱스: (`user_id`, `status`)
-
-### `postcard_photo` 엽서에 쓴 사진
-| 컬럼 | 타입 | NULL | 설명 |
-|---|---|---|---|
-| `postcard_id` | VARCHAR(36) PK | N | |
-| `display_order` | INT PK | N | 0~3 |
-| `photo_id` | VARCHAR(36) | N | |
-
-`Postcard`의 `@ElementCollection` + `@OrderColumn(name = "display_order")`로 만든다.
+- 인덱스: (`user_id`, `status`)
+- 생성은 비동기다. 요청 즉시 `PENDING`으로 저장하고 `id`를 돌려준 뒤 백그라운드에서 만든다. 서버가 다시 켜질 때 `PENDING`·`PROCESSING`으로 남은 행은 `FAILED`로 바꾼다.
+- 목 모드·OpenAI 키 없음·이미지 생성 실패면 원본 사진을 그대로 템플릿에 넣어 `COMPLETED`로 만든다. `FAILED`는 사진 파일이 없는 것처럼 엽서를 아예 만들 수 없을 때만 쓴다.
+- 제목 문구는 이미지에 바로 쓰므로 저장하지 않는다.
 
 ## 도메인 간에 쓰는 서비스
 
@@ -241,7 +237,7 @@ docker compose down -v
 | `domain/user` | `UserService.getUser(userId)` | 사용자 확인이 필요한 모든 기능 |
 | `domain/place` | `PlaceService`의 `ACTIVE` 장소 조회 | F2, F3, F4, F5, F6 |
 | `domain/visit` | `VisitService.topPlaces(from, to, limit)` | F2 지난주 인기 |
-| `domain/photo` | `PhotoService`의 소유자 확인·사진 조회 | F4, F6, F7 |
+| `domain/photo` | `PhotoService`의 소유자 확인·사진 조회·파일 읽기 | F4, F6, F7 |
 | `domain/review` | `ReviewService`의 장소별 한걸음 조회 | F3 |
 
 ## 저장하지 않는 것
