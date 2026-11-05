@@ -1,5 +1,6 @@
 package com.hackathon.domain.review.repository;
 
+import com.hackathon.domain.review.dto.response.PlaceReviewCount;
 import com.hackathon.domain.review.entity.Review;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -15,6 +16,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     /** 최신순 (인덱스 place_id, created_at). 같은 시각이면 id가 큰 것이 먼저 */
     List<Review> findByPlaceIdOrderByCreatedAtDescIdDesc(Long placeId, Pageable pageable);
+
+    /** 장소별 한걸음 수 (F6 흔적 지도). 한걸음이 없는 장소는 빠진다 */
+    @Query("select new com.hackathon.domain.review.dto.response.PlaceReviewCount(r.placeId, count(r)) from Review r group by r.placeId")
+    List<PlaceReviewCount> countByPlace();
 
     /** 샘플 한걸음이 이미 들어간 장소인지 (샘플 사용자가 쓴 글이 있는지) */
     boolean existsByPlaceIdAndUserIdIn(Long placeId, Collection<String> userIds);

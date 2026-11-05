@@ -244,6 +244,7 @@ docker compose down -v
 | `domain/visit` | `VisitService.topPlaces(from, to, limit)` | F2 지난주 인기 |
 | `domain/photo` | `PhotoService.getOwnedPhoto(userId, photoId)` → 소유자 확인 + `PhotoInfo`(403 `PHOTO_FORBIDDEN`), `getPhoto(photoId)`, `getFile(photoId)` → 파일 | F4, F6, F7 |
 | `domain/review` | `ReviewService`의 장소별 한걸음 조회 | F3 |
+| `domain/review` | `ReviewService.countByPlace()` → 장소별 한걸음 수 | F6 지도 핀 |
 
 ## 저장하지 않는 것
 

@@ -10,6 +10,7 @@ import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.service.PlaceService;
 import com.hackathon.domain.review.dto.request.ReviewCreateRequestDto;
 import com.hackathon.domain.review.dto.response.ModerationResult;
+import com.hackathon.domain.review.dto.response.PlaceReviewCount;
 import com.hackathon.domain.review.dto.response.ReviewListResponseDto;
 import com.hackathon.domain.review.dto.response.ReviewResponseDto;
 import com.hackathon.domain.review.entity.Review;
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -59,6 +61,12 @@ public class ReviewService {
     private final PromptRegistry promptRegistry;
     private final LlmClient llmClient;
     private final JsonMapper jsonMapper;
+
+    /** 장소별 한걸음 수 (F6 흔적 지도). 한걸음이 없는 장소는 맵에 없다 */
+    public Map<Long, Long> countByPlace() {
+        return reviewRepository.countByPlace().stream()
+                .collect(Collectors.toMap(PlaceReviewCount::placeId, PlaceReviewCount::reviewCount));
+    }
 
     public ReviewResponseDto create(Long placeId, ReviewCreateRequestDto request) {
         UserResponseDto user = userService.getUser(request.userId());

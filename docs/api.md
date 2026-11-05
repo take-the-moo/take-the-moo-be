@@ -859,6 +859,61 @@ F5 나의 기록. 화면에 필요한 도장, 안 간 코스 장소, 코스 진�
 
 ---
 
+### GET /api/map/pins
+
+F6 흔적 지도 — "먼저 온 유학생의 발자취". 노출 중인 장소마다 다녀간 사람 수, 국적 분포, 한걸음 수를 준다. 핀을 누르면 `GET /api/places/{placeId}/reviews`로 한걸음을 보여 준다.
+
+요청 파라미터 없음.
+
+```bash
+curl 'localhost:8080/api/map/pins'
+```
+
+응답 200
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": [
+    {
+      "placeId": 4,
+      "name": "독립문",
+      "latitude": 37.5723,
+      "longitude": 126.9598,
+      "imageUrl": "https://tong.visitkorea.or.kr/cms/resource/example/gate.jpg",
+      "visitorCount": 7,
+      "reviewCount": 4,
+      "nationalities": [
+        { "nationality": "VN", "count": 3 },
+        { "nationality": "CN", "count": 2 },
+        { "nationality": "JP", "count": 1 },
+        { "nationality": "MN", "count": 1 }
+      ]
+    },
+    {
+      "placeId": 51,
+      "name": "독립문영천시장",
+      "latitude": 37.5719,
+      "longitude": 126.9585,
+      "imageUrl": null,
+      "visitorCount": 0,
+      "reviewCount": 0,
+      "nationalities": []
+    }
+  ]
+}
+```
+
+- 노출 중인 장소가 모두 온다 (방문이 없는 장소도 `visitorCount: 0`으로 온다). 순서는 방문자 많은 순 → 한걸음 많은 순
+- `visitorCount`는 방문 도장을 찍은 사람 수다. 한 사람이 여러 날 와도 1명이다. 기간 제한 없이 지금까지 전부 센다
+- `nationalities`는 다녀간 사람의 국적별 인원이다. 많은 순, 같으면 국적 코드 순서(`VN, CN, JP, MN, UZ, US, OTHER`). 사용자 정보를 찾을 수 없는 방문자는 국적 분포에서만 빠지므로, 합이 `visitorCount`보다 작을 수 있다 (보통은 같다)
+- `latitude`·`longitude`는 **장소의** 좌표다. 개인의 위치·방문 날짜·시각과 사용자 ID는 내보내지 않는다
+- 시연용 샘플 사용자의 방문·한걸음도 센다
+
+---
+
 ### GET /api/health
 
 ```json
