@@ -14,6 +14,7 @@ import com.hackathon.domain.scene.entity.Scene;
 import com.hackathon.domain.scene.exception.SceneErrorType;
 import com.hackathon.domain.scene.exception.SceneException;
 import com.hackathon.domain.scene.repository.SceneRepository;
+import com.hackathon.global.common.Nationality;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -30,7 +31,7 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * F3 맞춤 장면. 장소 × 관점 국적 × 언어별로 이야기를 만들고 DB에 캐싱한다.
  * - 캐시 키는 (placeId, nationality, language). 저장된 sourceHash가 지금 입력의 해시와 같으면 AI를 부르지 않는다
- * - sourceHash = 모델 + 완성된 system 프롬프트 + 장소 입력 (+ 목 모드 표시). 장소 설명이나 프롬프트가 바뀌면 다시 만든다
+ * - sourceHash = 모델 + 완성된 system 프롬프트 + 장소 입력(내 나라 연결 포함) (+ 목 모드 표시). 장소 설명·연결·프롬프트가 바뀌면 다시 만든다
  * - AI 호출은 트랜잭션 밖에서 한다 (DB 커넥션을 수 초간 잡지 않는다)
  */
 @Slf4j
@@ -57,7 +58,7 @@ public class SceneService {
         LlmPrompt prompt = promptRegistry.resolve(PROMPT_KEY, Map.of(
                 "nationality", request.nationality().getKoreanName(),
                 "language", request.language().getKoreanName()));
-        String input = placeInput(place, source);
+        String input = placeInput(place, source, request.nationality());
         String sourceHash = sha256(prompt.model() + "\n" + prompt.system() + "\n" + input
                 + (llmClient.isMock() ? "\nmock" : ""));
 
@@ -86,13 +87,17 @@ public class SceneService {
         return SceneResponseDto.of(scene, place.getName(), false);
     }
 
-    /** user 메시지로 넘기는 장소 정보. 필드 의미는 prompts.yml scene.system에 적혀 있다 */
-    private String placeInput(Place place, String source) {
+    /**
+     * user 메시지로 넘기는 장소 정보. 필드 의미는 prompts.yml scene.system에 적혀 있다.
+     * connection(사람이 검토한 내 나라 연결)도 해시에 들어가므로 연결 데이터를 고치면 그 조합의 장면을 다시 만든다
+     */
+    private String placeInput(Place place, String source, Nationality nationality) {
         Map<String, Object> input = new LinkedHashMap<>();
         input.put("name", place.getName());
         input.put("address", place.getAddress());
         input.put("sensitiveHistory", place.isSensitiveHistory());
         input.put("source", source);
+        input.put("connection", placeService.findConnection(place, nationality).orElse(null));
         return jsonMapper.writeValueAsString(input);
     }
 

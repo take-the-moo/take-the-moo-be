@@ -5,11 +5,14 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -17,10 +20,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.hackathon.domain.llm.exception.LlmErrorType;
 import com.hackathon.domain.llm.exception.LlmException;
 import com.hackathon.domain.llm.service.LlmClient;
+import com.hackathon.domain.place.curation.PlaceConnection;
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.entity.Station;
 import com.hackathon.domain.place.repository.PlaceRepository;
 import com.hackathon.domain.place.repository.StationRepository;
+import com.hackathon.domain.place.service.PlaceService;
 import com.hackathon.domain.recommend.dto.response.RecommendChoice;
 import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
 import com.hackathon.domain.user.service.UserService;
@@ -30,10 +35,12 @@ import com.hackathon.domain.visit.repository.VisitRepository;
 import com.hackathon.global.common.Nationality;
 import com.hackathon.global.util.SeoulTime;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -74,6 +81,9 @@ class NowControllerTest {
 
     @MockitoSpyBean
     LlmClient llmClient;
+
+    @MockitoSpyBean
+    PlaceService placeService;
 
     double baseLat;
     double baseLng;
@@ -147,6 +157,25 @@ class NowControllerTest {
             mvc.perform(get("/api/now").param("userId", userId).param("stationId", String.valueOf(stationId)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.reason").value(startsWith("[MOCK VI] 베트남")));
+        }
+
+        @Test
+        void 후보마다_내_나라_연결을_AI_입력에_넣는다() throws Exception {
+            Long prison = savePlace("감옥", OUTDOOR, 100);
+            savePlace("공원", OUTDOOR, 300);
+            doReturn(Optional.of(new PlaceConnection("하노이 호아로 수용소", "Nhà tù Hỏa Lò", "감옥을 역사관으로 남긴 곳")))
+                    .when(placeService).findConnection(argThat(place -> place.getId().equals(prison)), eq(Nationality.VN));
+            String userId = userService.create(new UserCreateRequestDto(Nationality.VN, Language.VI)).userId();
+
+            mvc.perform(get("/api/now").param("userId", userId).param("stationId", String.valueOf(stationId))
+                            .param("time", "15:00").param("weather", "CLEAR"))
+                    .andExpect(status().isOk());
+
+            ArgumentCaptor<String> input = ArgumentCaptor.forClass(String.class);
+            verify(llmClient).entity(any(), input.capture(), eq(RecommendChoice.class), any());
+            assertThat(input.getValue())
+                    .contains("\"connection\":{\"counterpart\":\"하노이 호아로 수용소\",\"localName\":\"Nhà tù Hỏa Lò\"")
+                    .contains("\"connection\":null"); // 연결이 없는 후보
         }
 
         @Test

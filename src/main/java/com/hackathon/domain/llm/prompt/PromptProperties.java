@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -24,7 +25,9 @@ public record PromptProperties(
             @DecimalMin("0.0") @DecimalMax("1.0") Double temperature,
             @Positive Integer maxTokens,
             @NotBlank String system,
-            @DefaultValue Map<String, String> defaults
+            @DefaultValue Map<String, String> defaults,
+            @Pattern(regexp = "low|medium|high|xhigh|max") String effort,
+            @Pattern(regexp = "adaptive|disabled") String thinking
     ) {
     }
 }
