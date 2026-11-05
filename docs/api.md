@@ -48,7 +48,8 @@
 |---|---|---|---|
 | F1 | POST | `/api/users` | 국적·언어로 익명 사용자 생성 → `userId` (기기에 저장) |
 | F1 | GET | `/api/users/{userId}` | 사용자 조회 |
-| F2 | GET | `/api/now` | 시간·날씨·위치 추천 + 지난주 인기 (시뮬레이션 파라미터) |
+| F2 | GET | `/api/now` | 시간·날씨·위치 추천 + 지난주 인기 (시뮬레이션 파라미터). 추천 이유는 내 나라의 비슷한 사례로 잇는다 |
+| F2 | GET | `/api/stations` | 역 선택 목록 (위치 거부·데모용, 서대문 생활권 역) |
 | F3 | POST | `/api/scenes` | 맞춤 장면 생성 (국적 바꿔 재생성 가능) |
 | F4 | GET | `/api/places/nearby` | 주변 장소 후보 |
 | F4 | POST | `/api/explanations` | 선택한 장소 해설 (사용자 언어로 번역) |

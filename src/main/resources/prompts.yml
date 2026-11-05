@@ -13,8 +13,13 @@
 #     누가·언제·무엇을 했는지는 숨기지 않는다 / 감정을 싣는 수식어("만행", "탄압기관" 등)와
 #     특정 국가·국민 전체를 겨냥하는 표현은 쓰지 않는다 / "기억과 평화의 공간"으로 끝맺는다
 #   - 언어는 {language}(Language.koreanName), 국적은 {nationality}(Nationality.koreanName) 변수로 받는다
+#   - 모국어로 쓰는 필드에는 한국어 낱말을 섞지 않는다 (실제 호출에서 일본어 문장에 '옥사'가 섞였다)
+#   - 내 나라 연결(F2·F3): {nationality}의 비슷한 장소·역사·문화 사례 하나로 잇는다. 외국 사례는 널리 알려진 것만,
+#     확실하지 않으면 공통된 경험으로 잇는다 / 기타 국적이면 특정 나라를 가정하지 않는다 / 나라끼리 고통을 견주지 않는다
 #
-# 예정 promptKey (기능 구현 때 추가): recommend(F2) · translate(F4·F6) · moderate(F6)  (scene(F3)는 추가됨)
+# 예정 promptKey (기능 구현 때 추가): recommend(F2) · translate-explanation(F4) · translate-review·moderate(F6)  (scene(F3)는 추가됨)
+#   recommend 메모 (2026-11 실제 호출 테스트): 후보·요약에 없는 사실 금지 / 민감한 역사도 "누가"를 빼지 않는다
+#     (일본 유학생 응답에서 "일제가"가 빠졌다) / 걷는 시간은 서버가 계산한다 / max-tokens 1500 이상
 # 엽서 이미지(F7)는 OpenAI라 형식이 다르다 — 이미지 프롬프트도 이 파일에 둔다 (Java 코드 금지)
 # chat / analyze / image는 범용 샘플이다. 필요 없어지면 지워도 된다
 llm:
