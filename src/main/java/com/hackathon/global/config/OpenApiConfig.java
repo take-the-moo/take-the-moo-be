@@ -7,6 +7,7 @@ import com.hackathon.domain.postcard.exception.PostcardErrorType;
 import com.hackathon.domain.review.exception.ReviewErrorType;
 import com.hackathon.domain.scene.exception.SceneErrorType;
 import com.hackathon.domain.user.exception.UserErrorType;
+import com.hackathon.domain.visit.exception.VisitErrorType;
 import com.hackathon.global.external.ExternalApiErrorType;
 import com.hackathon.global.response.ApiResult;
 import com.hackathon.global.response.type.CommonErrorType;
@@ -47,6 +48,7 @@ public class OpenApiConfig {
                     SceneErrorType.values(),
                     UserErrorType.values(),
                     ReviewErrorType.values(),
+                    VisitErrorType.values(),
                     StorageErrorType.values())
             .flatMap(Stream::of)
             // 404·405·415는 라우팅 단계 오류라 엔드포인트마다 붙이지 않는다

@@ -1,0 +1,86 @@
+[
+  {
+    "courseId": "independence",
+    "name": { "KO": "독립 코스", "EN": "Independence Course", "VI": "Hành trình Độc lập", "ZH": "独立路线", "JA": "独立コース" },
+    "contentIds": ["130152", "127425", "2789102"],
+    "placeNames": ["서대문형무소역사관", "독립문", "독립문영천시장"]
+  },
+  {
+    "courseId": "provisional-government",
+    "name": { "KO": "임시정부 코스", "EN": "Provisional Government Course", "VI": "Hành trình Chính phủ Lâm thời", "ZH": "临时政府路线", "JA": "臨時政府コース" },
+    "contentIds": ["2813170", "1825057", "2789102"],
+    "placeNames": ["국립대한민국임시정부기념관", "3.1독립선언기념탑", "독립문영천시장"]
+  },
+  {
+    "courseId": "independence-park",
+    "name": { "KO": "독립공원 코스", "EN": "Independence Park Course", "VI": "Hành trình Công viên Độc lập", "ZH": "独立公园路线", "JA": "独立公園コース" },
+    "contentIds": ["2813170", "128622", "127425"],
+    "placeNames": ["국립대한민국임시정부기념관", "서대문독립공원", "독립문"]
+  },
+  {
+    "courseId": "seo-jae-pil",
+    "name": { "KO": "서재필 코스", "EN": "Seo Jae-pil Course", "VI": "Hành trình Seo Jae-pil", "ZH": "徐载弼路线", "JA": "徐載弼コース" },
+    "contentIds": ["1829610", "127425", "2789102"],
+    "placeNames": ["송재서재필선생상", "독립문", "독립문영천시장"]
+  },
+  {
+    "courseId": "old-road-temple",
+    "name": { "KO": "옛길과 절 코스", "EN": "Old Paths and Temple Course", "VI": "Hành trình Đường xưa và Chùa", "ZH": "古道与寺庙路线", "JA": "古道とお寺コース" },
+    "contentIds": ["126503", "126531", "128622"],
+    "placeNames": ["봉원사(서울)", "무악산 동봉수대 터", "서대문독립공원"]
+  },
+  {
+    "courseId": "ansan-forest",
+    "name": { "KO": "안산 숲 코스", "EN": "Ansan Forest Course", "VI": "Hành trình Rừng Ansan", "ZH": "鞍山森林路线", "JA": "鞍山の森コース" },
+    "contentIds": ["2661502", "130448", "3544787"],
+    "placeNames": ["서대문 안산(안산자락길)", "서대문자연사박물관", "연희숲속쉼터"]
+  },
+  {
+    "courseId": "ansan-temple",
+    "name": { "KO": "안산과 절 코스", "EN": "Ansan and Temple Course", "VI": "Hành trình Ansan và Chùa", "ZH": "鞍山与寺庙路线", "JA": "鞍山とお寺コース" },
+    "contentIds": ["126503", "2661502", "130448"],
+    "placeNames": ["봉원사(서울)", "서대문 안산(안산자락길)", "서대문자연사박물관"]
+  },
+  {
+    "courseId": "forest-books",
+    "name": { "KO": "숲과 책 코스", "EN": "Forest and Books Course", "VI": "Hành trình Rừng và Sách", "ZH": "森林与书籍路线", "JA": "森と本のコース" },
+    "contentIds": ["2661502", "130448", "3452874"],
+    "placeNames": ["서대문 안산(안산자락길)", "서대문자연사박물관", "폭포책방 아름인도서관"]
+  },
+  {
+    "courseId": "hongjecheon",
+    "name": { "KO": "홍제천 코스", "EN": "Hongjecheon Stream Course", "VI": "Hành trình Suối Hongje", "ZH": "弘济川路线", "JA": "弘済川コース" },
+    "contentIds": ["126531", "130448", "2783698"],
+    "placeNames": ["무악산 동봉수대 터", "서대문자연사박물관", "홍제폭포"]
+  },
+  {
+    "courseId": "sinchon-street",
+    "name": { "KO": "신촌 거리 코스", "EN": "Sinchon Street Course", "VI": "Hành trình Phố Sinchon", "ZH": "新村街道路线", "JA": "新村ストリートコース" },
+    "contentIds": ["264375", "3456475", "3082166"],
+    "placeNames": ["연세로", "창천근린공원", "신촌그래피티벽화터널"]
+  },
+  {
+    "courseId": "sinchon-culture",
+    "name": { "KO": "신촌 문화 코스", "EN": "Sinchon Culture Course", "VI": "Hành trình Văn hóa Sinchon", "ZH": "新村文化路线", "JA": "新村カルチャーコース" },
+    "contentIds": ["3456362", "2581396", "264375"],
+    "placeNames": ["대현문화공원", "신촌문화발전소", "연세로"]
+  },
+  {
+    "courseId": "two-campuses",
+    "name": { "KO": "두 캠퍼스 코스", "EN": "Two Campuses Course", "VI": "Hành trình Hai Khuôn viên", "ZH": "双校园路线", "JA": "二つのキャンパスコース" },
+    "contentIds": ["252533", "129815", "2667611"],
+    "placeNames": ["서울 연세대학교 언더우드관", "이화여자대학교 박물관", "이대거리"]
+  },
+  {
+    "courseId": "ewha-street",
+    "name": { "KO": "이대 거리 코스", "EN": "Ewha Street Course", "VI": "Hành trình Phố Ewha", "ZH": "梨大街道路线", "JA": "梨大ストリートコース" },
+    "contentIds": ["264375", "2667611", "129815"],
+    "placeNames": ["연세로", "이대거리", "이화여자대학교 박물관"]
+  },
+  {
+    "courseId": "rainy-day",
+    "name": { "KO": "비 오는 날 코스", "EN": "Rainy Day Course", "VI": "Hành trình Ngày mưa", "ZH": "雨天路线", "JA": "雨の日コース" },
+    "contentIds": ["2553390", "3456362", "130949"],
+    "placeNames": ["우석뮤지엄", "대현문화공원", "이화여대 자연사박물관"]
+  }
+]

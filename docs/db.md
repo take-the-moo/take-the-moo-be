@@ -15,7 +15,7 @@
 | `place_time_slot` | `Place`의 컬렉션 | `domain/place` | F2 | 구현됨 |
 | `station` | `Station` | `domain/place` | F2 | 구현됨 |
 | `photo` | `Photo` | `domain/photo` | F4·F6·F7 | 구현됨 |
-| `visit` | `Visit` | `domain/visit` | F5·F6·F2 | 구현 전 |
+| `visit` | `Visit` | `domain/visit` | F5·F6·F2 | 구현됨 |
 | `review` | `Review` | `domain/review` | F6·F3 | 구현됨 |
 | `review_translation` | `ReviewTranslation` | `domain/review` | F6 | 구현됨 |
 | `explanation_translation` | `ExplanationTranslation` | `domain/place` | F4 | 구현 전 |
@@ -154,7 +154,12 @@ docker compose down -v
 - 유니크: (`user_id`, `place_id`, `visited_date`). 하루에 한 장소당 도장 하나다.
 - 인덱스: (`visited_date`, `place_id`). 지난주 인기 조회용이다.
 - 국적 분포는 사용자별로 집계한 뒤 `UserService`로 국적을 조회해 합친다.
-- 코스는 테이블이 아니라 `src/main/resources/data/courses.json`에 `contentId` 순서로 둔다. 진행도는 `visit`으로 계산한다.
+- 코스는 테이블이 아니라 `src/main/resources/data/courses.json`에 추천 순서대로 `contentId`로 둔다. 진행도는 `visit`으로 계산한다.
+  - 코스 하나는 3곳이고, 코스 안의 모든 장소는 서로 300m~1km 떨어져 있어야 한다. 한 장소가 여러 코스에 들어가도 된다
+  - 순서를 강제하지 않는다. 다음 장소는 남은 곳 중 지금 시간대에 맞고 비·눈이면 실내인 곳에서 가장 가까운 곳으로 안내한다. 그런 곳이 없으면 남은 곳 중 가장 가까운 곳이다
+  - 노출 중(`ACTIVE`)이 아닌 장소가 하나라도 있는 코스는 추천하지 않는다
+  - 코스 이름은 `name`에 언어별로 저장한다. 사용자 언어 → `EN` → `KO` 순서로 고른다. `KO`는 필수다
+  - `placeNames`는 사람이 알아보기 위한 참고용이고 코드에서 쓰지 않는다
 
 ### `review` 한걸음
 | 컬럼 | 타입 | NULL | 설명 |
