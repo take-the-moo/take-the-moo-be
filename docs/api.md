@@ -324,6 +324,54 @@ curl 'localhost:8080/api/places/nearby?stationId=12'
 
 ---
 
+### POST /api/explanations
+
+F4 현장 해설. 장소에 저장된 한국어 해설을 요청 언어로 번역해 준다. AI는 번역만 하고 내용을 더하거나 빼지 않는다.
+
+요청
+
+```json
+{ "placeId": 34, "language": "VI" }
+```
+
+| 필드 | 필수 | 설명 |
+|---|---|---|
+| placeId | O | `GET /api/places/nearby`의 `placeId` |
+| language | O | 읽을 언어 (`KO, EN, VI, ZH, JA, MN, UZ`). 보통 사용자 언어 |
+
+```bash
+curl -X POST localhost:8080/api/explanations -H 'Content-Type: application/json' \
+  -d '{"placeId": 34, "language": "VI"}'
+```
+
+응답 200
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": {
+    "placeId": 34,
+    "name": "서대문형무소역사관",
+    "language": "VI",
+    "text": "Nhà tù Seodaemun do Nhật Bản xây dựng vào năm 1908…",
+    "original": "1908년 일제가 세운 감옥이다…",
+    "cached": false
+  }
+}
+```
+
+- `text`는 요청 언어로 옮긴 해설, `original`은 한국어 원문이다. 화면에서 원문 보기를 함께 둘 수 있다
+- 원문은 팀이 쓴 해설이 있으면 그것, 없으면 한국관광공사 TourAPI 개요다
+- `language`가 `KO`면 AI를 부르지 않고 원문을 그대로 준다 (`text` = `original`, `cached: false`)
+- 번역은 장소 × 언어별로 서버에 저장해 두므로 두 번째부터는 바로 온다(`cached: true`). 처음 번역할 때만 AI 호출로 몇 초 걸린다. 원문이 바뀌면 다시 번역한다
+- 목 모드에서는 `text`가 `[번역] 원문` 형태로 온다
+
+오류: 404 `PLACE_NOT_FOUND`(없거나 노출하지 않는 장소), 422 `PLACE_EXPLANATION_MISSING`(해설 원문이 없는 장소 — 주변 장소 목록에는 나오지 않는다), 422 `COMMON_VALIDATION_FAILED`(placeId·language 누락), 400 `COMMON_INVALID_REQUEST`(없는 언어 코드), 502·504 `LLM_*`(번역 실패)
+
+---
+
 ### POST /api/photos
 
 사진 업로드 (F4·F6·F7 공통). 받은 `photoId`를 한걸음·엽서 요청에 넣는다.
@@ -719,6 +767,7 @@ F5 방문 도장. 장소 근처(기본 200m)에 있으면 도장을 찍고, 이�
 | 415 | `COMMON_UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 422 | `COMMON_VALIDATION_FAILED` | 값 검증 실패 (빈 메시지, 길이 초과, 이미지 형식·크기). message에 필드별 사유 |
 | 422 | `SCENE_SOURCE_MISSING` | 장소에 이야기를 만들 설명(해설·개요)이 없음 |
+| 422 | `PLACE_EXPLANATION_MISSING` | 장소에 현장 해설 원문(해설·개요)이 없음 |
 | 422 | `STATION_INVALID_LOCATION` | `lat`·`lng` 중 하나만 오거나 범위(위도 ±90, 경도 ±180)를 벗어남 |
 | 422 | `REVIEW_INAPPROPRIATE` | 한걸음에 욕설·혐오·광고·연락처가 있음. 저장되지 않는다 |
 | 422 | `VISIT_TOO_FAR` | 장소에서 멀어 도장을 받을 수 없음 |
