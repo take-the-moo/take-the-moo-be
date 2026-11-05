@@ -1,0 +1,43 @@
+# 빌드 확인용 최소 CI. main push / PR마다 컴파일 + 테스트(목 모드)를 돌린다.
+# merge 차단·배포는 하지 않는다. API 키 시크릿도 필요 없다.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Build (compile + test, mock mode)
+        run: ./gradlew build
+        env:
+          LLM_MOCK: 'true'
+
+      - name: Upload test report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report
+          path: build/reports/tests/test
+          retention-days: 3

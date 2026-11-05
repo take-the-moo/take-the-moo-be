@@ -58,6 +58,7 @@ src/main/resources/{application.yml, prompts.yml}
 - 응답·예외 규칙, LLM 규칙은 [AGENTS.md](AGENTS.md)
 - `.claude/` — 권한 설정, `.java` 수정 시 자동 `compileJava` 훅, `/ai-feature`·`/demo-check` 커맨드
 - `.githooks/pre-commit` — `.env`·API 키(`sk-ant-…`)·설정 파일 리터럴 시크릿 커밋 차단
+- `.github/workflows/ci.yml` — main push·PR마다 `./gradlew build`(목 모드 테스트 포함). 차단·배포 없이 확인만
 
 ## 설정 요약
 
