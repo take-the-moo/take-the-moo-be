@@ -12,6 +12,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record AppProperties(
         @DefaultValue Storage storage,
         @DefaultValue Weather weather,
+        @DefaultValue Tour tour,
         @DefaultValue Demo demo
 ) {
 
@@ -30,6 +31,25 @@ public record AppProperties(
             @DefaultValue("59") int nx,
             @DefaultValue("127") int ny,
             @DefaultValue("10m") Duration cacheTtl
+    ) {
+    }
+
+    /**
+     * 한국관광공사 TourAPI(국문 관광정보). 장소 기본 정보는 이 API로 받아 DB에 동기화한다.
+     * serviceKey는 "Decoding" 키. 비어 있으면 동기화를 건너뛰고 DB에 있는 데이터로 동작한다.
+     * 지역 코드는 TourAPI 버전에 따라 체계가 다를 수 있으니 문서에서 확인하고 고친다.
+     */
+    public record Tour(
+            @DefaultValue("") String serviceKey,
+            @DefaultValue("https://apis.data.go.kr/B551011/KorService2") String baseUrl,
+            // 서울
+            @DefaultValue("1") String areaCode,
+            // 서대문구
+            @DefaultValue("14") String sigunguCode,
+            // 발표 전에는 false로 꺼서 리허설한 데이터가 바뀌지 않게 한다
+            @DefaultValue("true") boolean syncEnabled,
+            // 매일 새벽 4시 (서울 시간)
+            @DefaultValue("0 0 4 * * *") String syncCron
     ) {
     }
 
