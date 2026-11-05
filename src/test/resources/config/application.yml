@@ -13,3 +13,5 @@ app:
   sample:
     # 샘플 한걸음은 테스트에서 넣지 않는다 (SampleReviewSeederTest가 직접 부른다)
     reviews-enabled: false
+    # 샘플 방문도 테스트에서 넣지 않는다 (SampleVisitSeederTest가 직접 부른다)
+    visits-enabled: false

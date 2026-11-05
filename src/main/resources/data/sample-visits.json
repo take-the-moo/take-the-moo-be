@@ -1,0 +1,20 @@
+{
+  "_guide": [
+    "샘플 방문 기록 (F5·F6). 흔적 지도와 지난주 인기(GET /api/now)가 비어 보이지 않게 서버를 켤 때 넣는다",
+    "contentId: 장소의 TourAPI contentId (place.content_id). name은 참고용이라 저장하지 않는다",
+    "visitors: 국적별 방문자 수 (VN·CN·JP·MN·UZ·US·OTHER, 1~10명). 국적마다 샘플 사용자를 그 수만큼 쓴다 (app_user.sample=true)",
+    "  국적별 첫 번째 샘플 사용자는 샘플 한걸음을 쓴 사람이다. 한걸음을 넣은 장소에는 그 국적을 꼭 넣어 작성자도 방문자로 잡히게 한다",
+    "방문 날짜는 서버가 정한다: 1~10일 전에 고르게 흩어 둔다 (최근 7일에 대부분 들어가 지난주 인기에 잡힌다)",
+    "서버를 켤 때마다 이 파일의 장소에서 샘플 사용자의 방문을 지우고 오늘 기준으로 다시 넣는다 (날짜가 늘 최근으로 유지된다)"
+  ],
+  "places": [
+    {"contentId": "127425", "name": "독립문", "visitors": {"VN": 5, "CN": 3, "JP": 2, "MN": 2, "UZ": 1}},
+    {"contentId": "130152", "name": "서대문형무소역사관", "visitors": {"VN": 4, "CN": 3, "JP": 2, "US": 2, "MN": 1}},
+    {"contentId": "2789102", "name": "독립문영천시장", "visitors": {"VN": 3, "CN": 2, "UZ": 2, "JP": 1}},
+    {"contentId": "128622", "name": "서대문독립공원", "visitors": {"VN": 2, "MN": 2, "US": 1, "CN": 1}},
+    {"contentId": "2661502", "name": "서대문 안산(안산자락길)", "visitors": {"CN": 2, "JP": 1, "UZ": 1}},
+    {"contentId": "2813170", "name": "국립대한민국임시정부기념관", "visitors": {"VN": 2, "CN": 2, "US": 1}},
+    {"contentId": "2773278", "name": "모래내시장 먹자골목", "visitors": {"UZ": 2, "MN": 1, "VN": 1}},
+    {"contentId": "1828571", "name": "독립관", "visitors": {"JP": 1, "VN": 1}}
+  ]
+}

@@ -60,6 +60,10 @@ public class SampleReviewSeeder {
     @EventListener(ApplicationReadyEvent.class)
     public void seedOnStartup() {
         if (!enabled || byContentId.isEmpty()) return;
+        // 샘플 사용자는 스레드를 띄우기 전에 이 스레드(시작 이벤트)에서 만든다.
+        // 샘플 방문 시더도 같은 사용자를 쓰므로, 두 스레드가 동시에 "국적별 첫 번째 샘플 사용자"를 만들지 않게 한다
+        byContentId.values().stream().flatMap(List::stream).map(SampleReviewFile.Entry::nationality).distinct()
+                .forEach(userService::getOrCreateSampleUser);
         Thread.ofVirtual().name("sample-review-seed").start(() -> {
             for (int attempt = 1; attempt <= RETRIES; attempt++) {
                 int pending = seed();
