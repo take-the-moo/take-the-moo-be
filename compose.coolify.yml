@@ -1,5 +1,5 @@
 # Coolify 배포용. 로컬 개발은 compose.yml을 쓴다.
-# - 포트를 공개하지 않는다. api는 Coolify의 Domains로 연결하고(https://주소:8080), mysql은 내부에서만 접속한다
+# - api는 서버의 API_PORT(기본 8081)로 공개한다. mysql은 공개하지 않고 내부에서만 접속한다
 # - 값은 Coolify의 Environment Variables에 넣는다. 이 파일에 키와 비밀번호를 쓰지 않는다
 # - 설정은 deploy/application.yml이 이미지에 들어가고, 시작할 때 환경변수를 읽는다
 services:
@@ -7,8 +7,8 @@ services:
     build:
       context: .
       target: deploy
-    expose:
-      - "8080"
+    ports:
+      - "${API_PORT:-8081}:8080"
     environment:
       DB_URL: jdbc:mysql://mysql:3306/hackathon
       DB_USERNAME: hackathon
