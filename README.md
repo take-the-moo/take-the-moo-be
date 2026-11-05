@@ -31,6 +31,14 @@ docker compose down
 - `api`는 `mysql`이 healthy가 된 뒤 뜬다. DB 데이터는 `mysql-data` 볼륨에 남고, 지우려면 `docker compose down -v`
 - 환경변수가 yml보다 우선하므로 셸에 `LLM_MOCK`가 남아 있으면 `application.yml`의 `llm.mock`이 무시된다
 
+### Coolify 배포
+
+`compose.coolify.yml`을 쓴다. 포트를 공개하지 않고, 값은 전부 Coolify 환경변수로 받는다 (`deploy/application.yml`에 값을 쓰지 않는다).
+
+1. Build Pack은 Docker Compose, Docker compose location은 `/compose.coolify.yml`
+2. Environment Variables: `DB_PASSWORD`, `MYSQL_ROOT_PASSWORD`(필수), `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `APP_TOUR_SERVICE_KEY`, `APP_STATION_API_KEY`, `APP_WEATHER_KMA_SERVICE_KEY`, `LLM_MOCK`
+3. Domains에서 `api` 서비스에 `https://주소:8080` 연결
+
 ### 목 모드
 
 `llm.mock=true`(환경변수 `LLM_MOCK=true`)면 Anthropic API를 호출하지 않고 `[MOCK]`으로 시작하는 고정 응답을 준다.
