@@ -19,6 +19,8 @@ services:
       APP_WEATHER_KMA_SERVICE_KEY: ${APP_WEATHER_KMA_SERVICE_KEY:-}
       APP_TOUR_SERVICE_KEY: ${APP_TOUR_SERVICE_KEY:-}
       APP_STATION_API_KEY: ${APP_STATION_API_KEY:-}
+      # 비우면 서버를 켤 때마다 임시 키를 만들어, 재배포하면 모두 다시 로그인해야 한다
+      APP_AUTH_JWT_SECRET: ${APP_AUTH_JWT_SECRET:-}
       TZ: Asia/Seoul
     volumes:
       # 사진·엽서 파일(app.storage.dir = 컨테이너의 /app/uploads)
