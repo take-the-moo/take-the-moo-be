@@ -16,7 +16,7 @@
 | `station` | `Station` | `domain/place` | F2 | 구현됨 |
 | `photo` | `Photo` | `domain/photo` | F4·F6·F7 | 구현 전 |
 | `visit` | `Visit` | `domain/visit` | F5·F6·F2 | 구현 전 |
-| `review` | `Review` | `domain/review` | F6·F3 | 구현 전 |
+| `review` | `Review` | `domain/review` | F6·F3 | 구현됨 (작성) |
 | `review_translation` | `ReviewTranslation` | `domain/review` | F6 | 구현 전 |
 | `explanation_translation` | `ExplanationTranslation` | `domain/place` | F4 | 구현 전 |
 | `scene` | `Scene` | `domain/scene` | F3 | 구현됨 |
