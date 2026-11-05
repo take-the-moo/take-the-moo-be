@@ -3,6 +3,7 @@ package com.hackathon.global.config;
 import com.hackathon.domain.llm.exception.LlmErrorType;
 import com.hackathon.domain.place.exception.PlaceErrorType;
 import com.hackathon.domain.scene.exception.SceneErrorType;
+import com.hackathon.domain.user.exception.UserErrorType;
 import com.hackathon.global.external.ExternalApiErrorType;
 import com.hackathon.global.response.ApiResult;
 import com.hackathon.global.response.type.CommonErrorType;
@@ -37,7 +38,8 @@ public class OpenApiConfig {
                     LlmErrorType.values(),
                     ExternalApiErrorType.values(),
                     PlaceErrorType.values(),
-                    SceneErrorType.values())
+                    SceneErrorType.values(),
+                    UserErrorType.values())
             .flatMap(Stream::of)
             // 404·405·415는 라우팅 단계 오류라 엔드포인트마다 붙이지 않는다
             .filter(code -> !List.of(404, 405, 415).contains(code.getHttpStatusCode()))

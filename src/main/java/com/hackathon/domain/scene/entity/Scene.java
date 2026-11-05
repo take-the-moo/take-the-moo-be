@@ -37,11 +37,11 @@ public class Scene extends BaseTimeEntity {
     private Long placeId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "varchar(20)")
+    @Column(nullable = false, length = 20)
     private Nationality nationality;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "varchar(20)")
+    @Column(nullable = false, length = 20)
     private Language language;
 
     // @Column에 length를 안 주면 기본 255라 MySQL tinytext가 되어 이야기가 잘린다. LONG32면 longtext (docs/db.md)

@@ -10,7 +10,7 @@
 
 | 테이블 | 엔티티 | 패키지 | 기능 | 상태 |
 |---|---|---|---|---|
-| `app_user` | `AppUser` | `domain/user` | F1 | 구현 전 |
+| `app_user` | `AppUser` | `domain/user` | F1 | 구현됨 |
 | `place` | `Place` | `domain/place` | 공통 | 구현됨 |
 | `place_time_slot` | `Place`의 컬렉션 | `domain/place` | F2 | 구현됨 |
 | `station` | `Station` | `domain/place` | F2 | 구현됨 |
