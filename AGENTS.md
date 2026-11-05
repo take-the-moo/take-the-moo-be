@@ -124,7 +124,7 @@ com.hackathon
 | `app.weather.kma-service-key` | 기상청 초단기실황 (공공데이터포털 Decoding 키) | 날씨 시뮬레이션/기본값 |
 | `app.tour.service-key` | TourAPI 국문 관광정보 (공공데이터포털 Decoding 키) | 동기화 건너뜀, DB 데이터 유지 |
 | `app.tour.sync-enabled` / `sync-cron` | 장소 동기화 켜기 / 주기 (기본 `true` / 매일 04:00) | - |
-| `app.tour.area-code` / `sigungu-code` | 서울 / 서대문구 (기본 `1` / `14`, TourAPI 문서로 확인) | - |
+| `app.tour.l-dong-regn-cd` / `l-dong-signgu-cd` | 법정동 코드 서울 / 서대문구 (기본 `11` / `410`). 예전 `areaCode`는 쓰지 않는다 | - |
 | `app.demo.default-station` | 위치·역이 없을 때 기준 역 (기본 `dongnimmun`) | 기본값 |
 
 키는 `application.yml`(gitignore) 또는 환경변수(`APP_WEATHER_KMA_SERVICE_KEY`, `APP_TOUR_SERVICE_KEY`)로 넣는다. AI 키는 `spring.ai.anthropic.api-key`(`ANTHROPIC_API_KEY`), `spring.ai.openai.api-key`(`OPENAI_API_KEY`).
