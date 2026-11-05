@@ -1,6 +1,7 @@
 package com.hackathon.domain.place.curation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.hackathon.global.common.TimeSlot;
 import java.util.List;
 
 /**
@@ -22,7 +23,7 @@ import java.util.List;
 public record PlaceCuration(
         String contentId,
         String name,
-        List<String> timeSlots,
+        List<TimeSlot> timeSlots,
         Boolean indoor,
         Boolean sensitiveHistory,
         String explanation

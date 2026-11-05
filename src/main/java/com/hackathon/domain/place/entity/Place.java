@@ -1,19 +1,29 @@
 package com.hackathon.domain.place.entity;
 
 import com.hackathon.domain.place.curation.PlaceCuration;
+import com.hackathon.global.common.TimeSlot;
 import com.hackathon.global.entity.BaseTimeEntity;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 /**
  * 장소. 필드 출처가 둘이다.
@@ -60,9 +70,19 @@ public class Place extends BaseTimeEntity {
     private String tourModifiedTime;
 
     // ── 팀 보강 ──────────────────────────────
-    /** 추천 방문 시간대. "MORNING,AFTERNOON" 형태 (MORNING 06–11 · AFTERNOON 11–17 · EVENING 17–21) */
-    @Column(length = 100)
-    private String recommendedTimeSlots;
+    /**
+     * 추천 방문 시간대 (place_time_slot 테이블).
+     * 동기화는 트랜잭션 없이 돌고 open-in-view도 꺼져 있어 LAZY면 트랜잭션 밖에서 읽을 때 예외가 난다.
+     * 장소당 최대 3개라 EAGER로 두고, 목록 조회의 N+1은 BatchSize로 줄인다.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "place_time_slot",
+            joinColumns = @JoinColumn(name = "place_id"),
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "time_slot", nullable = false, length = 20)
+    @BatchSize(size = 100)
+    private Set<TimeSlot> timeSlots = new HashSet<>();
 
     /** 실내 여부. 비 오면 실내만 추천한다 */
     private Boolean indoor;
@@ -74,9 +94,8 @@ public class Place extends BaseTimeEntity {
     @Lob
     private String explanation;
 
-    // MySQL 네이티브 enum이 되면 상수를 추가할 때 INSERT가 실패한다 (docs/db.md "enum 컬럼은 반드시 VARCHAR로")
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "varchar(20)")
+    @Column(nullable = false, length = 20)
     private PlaceStatus status;
 
     public static Place fromTour(String contentId) {
@@ -106,8 +125,8 @@ public class Place extends BaseTimeEntity {
     }
 
     static final String CULTURAL_FACILITY = "14";
-    static final List<String> DAYTIME = List.of("MORNING", "AFTERNOON");
-    static final List<String> ALL_DAY = List.of("MORNING", "AFTERNOON", "EVENING");
+    static final List<TimeSlot> DAYTIME = List.of(TimeSlot.MORNING, TimeSlot.AFTERNOON);
+    static final List<TimeSlot> ALL_DAY = List.of(TimeSlot.MORNING, TimeSlot.AFTERNOON, TimeSlot.EVENING);
 
     /**
      * 노출 여부와 보강 필드를 정한다. 동기화 때마다 호출된다.
@@ -118,11 +137,12 @@ public class Place extends BaseTimeEntity {
      */
     public void applyRules(PlaceCuration curation, boolean autoActiveType, boolean excluded) {
         boolean culturalFacility = CULTURAL_FACILITY.equals(contentTypeId);
-        List<String> slots = curation != null && curation.timeSlots() != null && !curation.timeSlots().isEmpty()
+        List<TimeSlot> slots = curation != null && curation.timeSlots() != null && !curation.timeSlots().isEmpty()
                 ? curation.timeSlots()
                 : culturalFacility ? DAYTIME : ALL_DAY;
 
-        this.recommendedTimeSlots = String.join(",", slots);
+        this.timeSlots.clear();
+        this.timeSlots.addAll(slots);
         this.indoor = curation != null && curation.indoor() != null ? curation.indoor() : culturalFacility;
         this.sensitiveHistory = curation != null && Boolean.TRUE.equals(curation.sensitiveHistory());
         this.explanation = curation == null ? null : curation.explanation();

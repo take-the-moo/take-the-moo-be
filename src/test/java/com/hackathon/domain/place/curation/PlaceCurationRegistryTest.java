@@ -2,6 +2,7 @@ package com.hackathon.domain.place.curation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.hackathon.global.common.TimeSlot;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -14,6 +15,8 @@ class PlaceCurationRegistryTest {
 
         assertThat(registry.find("130152")).get()
                 .extracting(PlaceCuration::sensitiveHistory).isEqualTo(true); // 서대문형무소역사관
+        assertThat(registry.find("130152").orElseThrow().timeSlots())
+                .containsExactly(TimeSlot.MORNING, TimeSlot.AFTERNOON);
         assertThat(registry.isExcluded("3078407")).isTrue(); // 금호아트홀 연세
         assertThat(registry.isExcluded("130152")).isFalse();
     }
