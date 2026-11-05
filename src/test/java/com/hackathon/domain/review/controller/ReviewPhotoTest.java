@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.hackathon.domain.photo.service.PhotoService;
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.repository.PlaceRepository;
-import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
+import com.hackathon.support.TestUsers;
 import com.hackathon.domain.user.service.UserService;
 import com.hackathon.global.common.Language;
 import com.hackathon.global.common.Nationality;
@@ -55,7 +55,7 @@ class ReviewPhotoTest {
     }
 
     private String createUser() {
-        return userService.create(new UserCreateRequestDto(Nationality.VN, Language.VI)).userId();
+        return TestUsers.create(userService, Nationality.VN, Language.VI);
     }
 
     private String uploadPhoto(String owner) {

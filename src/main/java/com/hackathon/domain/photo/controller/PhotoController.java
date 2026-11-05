@@ -46,7 +46,7 @@ public class PhotoController {
             @RequestPart("file")
             @ImageFile(maxBytes = MAX_BYTES, message = "10MB 이하의 jpeg, png, webp 이미지만 업로드할 수 있습니다.")
             MultipartFile file,
-            @Parameter(description = "POST /api/users가 돌려준 userId", example = "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c")
+            @Parameter(description = "로그인한 사용자의 userId (토큰의 사용자와 같아야 한다)", example = "linh_2026")
             @RequestParam @NotBlank(message = "userId를 입력해 주세요.") @Size(max = 36, message = "36자 이하로 입력해 주세요.")
             String userId,
             @Parameter(description = "찍은 장소 ID (선택)", example = "7")

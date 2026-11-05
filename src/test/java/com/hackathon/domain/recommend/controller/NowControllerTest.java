@@ -22,7 +22,7 @@ import com.hackathon.domain.place.entity.Station;
 import com.hackathon.domain.place.repository.PlaceRepository;
 import com.hackathon.domain.place.repository.StationRepository;
 import com.hackathon.domain.recommend.dto.response.RecommendChoice;
-import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
+import com.hackathon.support.TestUsers;
 import com.hackathon.domain.user.service.UserService;
 import com.hackathon.global.common.Language;
 import com.hackathon.domain.visit.entity.Visit;
@@ -142,7 +142,7 @@ class NowControllerTest {
         @Test
         void 사용자_언어와_국적으로_이유를_쓴다() throws Exception {
             savePlace("공원", OUTDOOR, 100);
-            String userId = userService.create(new UserCreateRequestDto(Nationality.VN, Language.VI)).userId();
+            String userId = TestUsers.create(userService, Nationality.VN, Language.VI);
 
             mvc.perform(get("/api/now").param("userId", userId).param("stationId", String.valueOf(stationId)))
                     .andExpect(status().isOk())

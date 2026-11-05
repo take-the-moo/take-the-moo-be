@@ -9,7 +9,7 @@ import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.repository.PlaceRepository;
 import com.hackathon.domain.review.entity.Review;
 import com.hackathon.domain.review.repository.ReviewRepository;
-import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
+import com.hackathon.support.TestUsers;
 import com.hackathon.domain.user.service.UserService;
 import com.hackathon.domain.visit.entity.Visit;
 import com.hackathon.domain.visit.repository.VisitRepository;
@@ -61,7 +61,7 @@ class MapPinTest {
     }
 
     private String user(Nationality nationality) {
-        return userService.create(new UserCreateRequestDto(nationality, nationality.getDefaultLanguage())).userId();
+        return TestUsers.create(userService, nationality, nationality.getDefaultLanguage());
     }
 
     private void visit(String userId, Long placeId, LocalDate date) {

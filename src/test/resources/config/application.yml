@@ -15,3 +15,8 @@ app:
     reviews-enabled: false
     # 샘플 방문도 테스트에서 넣지 않는다 (SampleVisitSeederTest가 직접 부른다)
     visits-enabled: false
+  auth:
+    # 서명 키는 두지 않는다 (비어 있으면 테스트마다 임시 키 — 발급·검증이 같은 서버 안이라 상관없다)
+    # 토큰 검사는 끈다 — 다른 기능 테스트는 토큰 없이 userId로 부른다. AuthEnforcementTest가 켜고 따로 확인한다
+    # 실제 실행에서는 늘 켜져 있다. pre-commit 훅이 이름에 token이 든 키의 리터럴 값을 막으므로 ${...:기본값} 형태로 쓴다
+    enforce-token: ${APP_AUTH_ENFORCE_TOKEN:false}

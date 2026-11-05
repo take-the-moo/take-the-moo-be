@@ -29,7 +29,7 @@ Swagger: http://localhost:8080/swagger-ui.html · 프론트 명세: `docs/api.md
 
 | 기능 | 패키지 | 엔드포인트 | AI가 하는 일 |
 |---|---|---|---|
-| F1 처음 설정 | `domain/user` | `POST /api/users`, `GET /api/users/{userId}` | - |
+| F1 로그인·내 정보 | `domain/user`, `global/auth` | `GET /api/auth/check-id`, `POST /api/auth/signup`, `POST /api/auth/login`, `GET·PATCH /api/users/me`, `GET /api/users/{userId}` | - |
 | F2 지금 추천 | `domain/recommend` (날씨는 `domain/weather`) | `GET /api/now`, `GET /api/stations` | 규칙으로 거른 후보 중 장소 선택 + 추천 이유 (내 나라의 비슷한 사례로 연결) |
 | F3 맞춤 장면 | `domain/scene` | `POST /api/scenes` | 모국어 + 쉬운 한국어 이야기(3~4문장), 내 나라 역사와 한 줄 연결 |
 | F4 현장 해설 | `domain/place` | `GET /api/places/nearby`, `POST /api/explanations` | 저장된 해설을 번역만 한다 |
@@ -54,6 +54,7 @@ Swagger: http://localhost:8080/swagger-ui.html · 프론트 명세: `docs/api.md
 ```
 com.hackathon
 ├── global/
+│   ├── auth/        JwtProvider(JWT 발급·검증), AuthTokenFilter(Bearer → AuthContext), AuthContext, PasswordConfig(BCrypt)
 │   ├── config/      AppProperties(app.*), JpaConfig(auditing), LlmProperties, AnthropicConfig, OpenApiConfig, WebConfig
 │   ├── common/      Nationality, Language, TimeSlot — 여러 도메인이 같이 쓰는 코드값
 │   ├── entity/      BaseTimeEntity — createdAt·updatedAt 자동 (서울 시간)
@@ -76,7 +77,9 @@ com.hackathon
 - 국적 `Nationality`: `VN, CN, JP, MN, UZ, US, OTHER` / 언어 `Language`: `KO, EN, VI, ZH, JA, MN, UZ` / 시간대 `TimeSlot`: `MORNING, AFTERNOON, EVENING`. API에서는 상수 이름 그대로 주고받는다
 - 시간·날짜는 `SeoulTime.now()/today()`를 쓴다 (`LocalDateTime.now()` 직접 금지 — 컨테이너는 UTC)
 - 엔티티는 `BaseTimeEntity`를 상속한다
-- 사용자는 로그인 없는 익명 사용자. `userId`는 서버가 만든 UUID 문자열이고 프론트가 기기에 저장한다
+- 사용자는 앱 내 아이디·비밀번호로 가입·로그인한다 (첫 화면에서 로그인 필수, 이메일 인증 없음). `userId` = 로그인 아이디(PK)다. 로그인하면 서버가 JWT를 주고, 프론트는 요청마다 `Authorization: Bearer` 헤더로 보낸다
+  - `userId`를 쓰는 API는 `UserService.getUser(userId)`가 토큰의 사용자와 같은지 확인한다 (다른 도메인은 지금처럼 getUser만 부르면 된다). 비밀번호는 BCrypt 해시로만 저장하고 원문·토큰은 로그에 남기지 않는다
+  - 테스트는 `app.auth.enforce-token=false`로 토큰 검사를 끄고 `support/TestUsers`로 사용자를 만든다. 토큰 검사 자체는 `AuthEnforcementTest`가 켜고 확인한다
 
 ## 장소·역 데이터 (외부 API 동기화)
 장소와 지하철역은 CSV·하드코딩 시드가 아니라 **외부 API를 호출해 DB에 동기화**한다. 관리자 API는 만들지 않는다.
@@ -166,9 +169,11 @@ com.hackathon
 | `app.tour.sync-enabled` / `sync-cron` | 장소 동기화 켜기 / 주기 (기본 `true` / 매일 04:00) | - |
 | `app.tour.l-dong-regn-cd` / `l-dong-signgu-cd` | 법정동 코드 서울 / 서대문구 (기본 `11` / `410`). 예전 `areaCode`는 쓰지 않는다 | - |
 | `app.demo.default-station` | 위치·역이 없을 때 기준 역 (기본 `독립문`, T Data 역 한글명) | 기본값 |
+| `app.auth.jwt-secret` | 로그인 토큰(JWT) 서명 키, 32바이트 이상 (환경변수 `APP_AUTH_JWT_SECRET`). **배포 환경에서는 꼭 넣는다** | 서버를 켤 때 임시 키 — 재시작하면 모두 다시 로그인 |
+| `app.auth.token-ttl` / `enforce-token` | 토큰 유효 기간 / userId와 토큰 사용자 일치 확인 (기본 `30d` / `true`, 테스트만 `false`) | - |
 | `app.visit.stamp-radius-meters` | 방문 도장을 줄 장소 반경(미터, 기본 `200`) | 기본값 |
 
-키는 `application.yml`(gitignore) 또는 환경변수(`APP_WEATHER_KMA_SERVICE_KEY`, `APP_TOUR_SERVICE_KEY`, `APP_STATION_API_KEY`)로 넣는다. AI 키는 `spring.ai.anthropic.api-key`(`ANTHROPIC_API_KEY`), `spring.ai.openai.api-key`(`OPENAI_API_KEY`).
+키는 `application.yml`(gitignore) 또는 환경변수(`APP_WEATHER_KMA_SERVICE_KEY`, `APP_TOUR_SERVICE_KEY`, `APP_STATION_API_KEY`, `APP_AUTH_JWT_SECRET`)로 넣는다. AI 키는 `spring.ai.anthropic.api-key`(`ANTHROPIC_API_KEY`), `spring.ai.openai.api-key`(`OPENAI_API_KEY`).
 
 ## 속도 규칙
 - 계획 승인 루프 없이 바로 구현한다

@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.hackathon.domain.place.entity.Place;
 import com.hackathon.domain.place.repository.PlaceRepository;
 import com.hackathon.domain.review.repository.ReviewRepository;
-import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
+import com.hackathon.support.TestUsers;
 import com.hackathon.domain.user.service.UserService;
 import com.hackathon.global.common.Language;
 import com.hackathon.global.common.Nationality;
@@ -54,7 +54,7 @@ class ReviewControllerTest {
         place.updateTourInfo("12", "독립문", "서울 서대문구", 37.57, 126.96, null, "20261101000000");
         place.applyRules(null, true, false);
         placeId = placeRepository.save(place).getId();
-        userId = userService.create(new UserCreateRequestDto(Nationality.VN, Language.VI)).userId();
+        userId = TestUsers.create(userService, Nationality.VN, Language.VI);
     }
 
     private ResultActions write(Long placeId, String body) throws Exception {

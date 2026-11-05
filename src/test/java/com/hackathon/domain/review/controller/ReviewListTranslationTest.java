@@ -19,7 +19,7 @@ import com.hackathon.domain.place.repository.PlaceRepository;
 import com.hackathon.domain.review.dto.response.ReviewTranslationBatch;
 import com.hackathon.domain.review.entity.Review;
 import com.hackathon.domain.review.repository.ReviewRepository;
-import com.hackathon.domain.user.dto.request.UserCreateRequestDto;
+import com.hackathon.support.TestUsers;
 import com.hackathon.domain.user.service.UserService;
 import com.hackathon.global.common.Language;
 import com.hackathon.global.common.Nationality;
@@ -57,7 +57,7 @@ class ReviewListTranslationTest {
         place.updateTourInfo("12", "영천시장", "서울 서대문구", 37.57, 126.96, null, "20261101000000");
         place.applyRules(null, true, false);
         Long placeId = placeRepository.save(place).getId();
-        String userId = userService.create(new UserCreateRequestDto(Nationality.CN, Language.ZH)).userId();
+        String userId = TestUsers.create(userService, Nationality.CN, Language.ZH);
         for (int i = 0; i < count; i++) reviewRepository.save(Review.create(placeId, userId, "맛있어요 " + i, Language.KO));
         return placeId;
     }

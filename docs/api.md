@@ -28,6 +28,16 @@
 
 `message`는 사용자에게 그대로 보여 줘도 되는 문구다. 분기는 `code`로 한다.
 
+## 인증 (로그인)
+
+앱 내 아이디·비밀번호 로그인이다. 로그인 흐름·자동 로그인·오류 처리는 [`docs/frontend-auth.md`](frontend-auth.md)에 정리했다.
+
+- 가입·로그인 응답의 `accessToken`(JWT)을 기기에 저장하고 **모든 요청에** `Authorization: Bearer {accessToken}` 헤더를 붙인다
+- `userId`를 쓰는 API(도장·한걸음 작성·사진·엽서·나의 기록, `userId`를 보낸 추천·한걸음 목록)는 토큰의 사용자와 `userId`가 같아야 한다
+  - 토큰 없음 401 `USER_LOGIN_REQUIRED` · 잘못됐거나 만료된 토큰 401 `USER_INVALID_TOKEN` · 다른 사람 `userId` 403 `USER_FORBIDDEN`
+- `userId`가 필요 없는 API(역 목록·주변 장소·해설·장면·흔적 지도 등)는 토큰 없이도 된다
+- `userId` = 로그인 아이디다
+
 ## 엔드포인트 요약
 
 ### 범용 샘플 API
@@ -46,8 +56,12 @@
 
 | 기능 | 메서드 | 경로 | 설명 |
 |---|---|---|---|
-| F1 | POST | `/api/users` | 국적·언어로 익명 사용자 생성 → `userId` (기기에 저장) |
-| F1 | GET | `/api/users/{userId}` | 사용자 조회 |
+| F1 | GET | `/api/auth/check-id` | 아이디 중복 확인 |
+| F1 | POST | `/api/auth/signup` | 회원가입 (아이디·비밀번호·이름·국적·언어) → 토큰 |
+| F1 | POST | `/api/auth/login` | 로그인 → 토큰 |
+| F1 | GET | `/api/users/me` | 내 정보 (자동 로그인 확인) |
+| F1 | PATCH | `/api/users/me` | 내 이름·국적·언어 수정 |
+| F1 | GET | `/api/users/{userId}` | 사용자 조회 (본인만) |
 | F2 | GET | `/api/now` | 시간·날씨·위치 추천 + 지난주 인기 (시뮬레이션 파라미터). 추천 이유는 내 나라의 비슷한 사례로 잇는다 |
 | F2 | GET | `/api/stations` | 역 선택 목록 (위치 거부·데모용, 서대문 생활권 역) |
 | F3 | POST | `/api/scenes` | 맞춤 장면 생성 (국적 바꿔 재생성 가능) |
@@ -205,19 +219,50 @@ curl -F file=@photo.png -F question="이 사진에 뭐가 보여?" localhost:808
 
 ---
 
-### POST /api/users
+### GET /api/auth/check-id
 
-F1 처음 설정. 국적·언어로 익명 사용자를 만든다. 응답의 `userId`를 기기에 저장해 두고 이후 요청에 쓴다.
+F1 아이디 중복 확인. 가입 화면에서 아이디를 입력할 때 부른다. 토큰 없이 부른다.
+
+쿼리: `loginId` (필수, 영문 소문자·숫자·밑줄 `_` 4~20자)
+
+```bash
+curl 'localhost:8080/api/auth/check-id?loginId=linh_2026'
+```
+
+응답 200
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": { "loginId": "linh_2026", "available": true }
+}
+```
+
+- `available: false`면 이미 쓰는 아이디다
+- 확인한 뒤 가입하기 전에 다른 사람이 먼저 가입할 수 있다. 그때 가입은 409 `USER_LOGIN_ID_TAKEN`이다
+
+오류: 422 `COMMON_VALIDATION_FAILED`(형식이 틀림 — `message`에 규칙이 온다), 400 `COMMON_INVALID_REQUEST`(`loginId` 없음)
+
+---
+
+### POST /api/auth/signup
+
+F1 회원가입. 가입하면 바로 로그인되어 토큰을 준다. 이메일 인증 같은 절차는 없다.
 
 요청 (`Content-Type: application/json`)
 
-| 필드 | 타입 | 필수 | 설명 |
-|---|---|---|---|
-| nationality | string | O | 국적 코드 (`VN, CN, JP, MN, UZ, US, OTHER`) |
-| language | string | O | 이야기·번역 언어 코드 (`KO, EN, VI, ZH, JA, MN, UZ`) |
+| 필드 | 필수 | 설명 |
+|---|---|---|
+| loginId | O | 아이디. 영문 소문자·숫자·밑줄 `_` 4~20자. 가입 뒤 바꿀 수 없다. 이 값이 `userId`가 된다 |
+| password | O | 비밀번호 8~64자 |
+| name | O | 화면에 보이는 이름 1~20자 (앞뒤 공백은 지운다) |
+| nationality | O | 국적 (`VN, CN, JP, MN, UZ, US, OTHER`) |
+| language | O | 이야기·번역 언어 (`KO, EN, VI, ZH, JA, MN, UZ`) |
 
 ```json
-{ "nationality": "VN", "language": "VI" }
+{ "loginId": "linh_2026", "password": "seodaemun1908", "name": "린", "nationality": "VN", "language": "VI" }
 ```
 
 응답 201
@@ -228,24 +273,85 @@ F1 처음 설정. 국적·언어로 익명 사용자를 만든다. 응답의 `us
   "httpStatusCode": 201,
   "message": "성공적으로 생성하였습니다.",
   "data": {
-    "userId": "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c",
-    "nationality": "VN",
-    "language": "VI"
+    "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsaW5oXzIwMjYi...",
+    "expiresAt": "2026-12-07T06:00:00Z",
+    "user": { "userId": "linh_2026", "name": "린", "nationality": "VN", "language": "VI" }
   }
 }
 ```
 
-오류: 400 `COMMON_INVALID_REQUEST`(없는 코드값, JSON 형식 오류), 422 `COMMON_VALIDATION_FAILED`(필드 누락)
+- `accessToken`을 기기에 저장하고 이후 모든 요청에 `Authorization: Bearer {accessToken}`으로 보낸다
+- `expiresAt`(UTC)은 30일 뒤다. 지나면 다시 로그인한다
+- 비밀번호는 서버에 해시로만 저장한다
+
+오류: 409 `USER_LOGIN_ID_TAKEN`(이미 있는 아이디), 422 `COMMON_VALIDATION_FAILED`(필드 누락, 아이디 형식, 비밀번호 길이, 이름 길이), 400 `COMMON_INVALID_REQUEST`(없는 국적·언어 코드, JSON 형식 오류)
+
+---
+
+### POST /api/auth/login
+
+F1 로그인. 토큰 없이 부른다.
+
+```json
+{ "loginId": "linh_2026", "password": "seodaemun1908" }
+```
+
+응답 200 — `data` 형식은 `POST /api/auth/signup`과 같다 (`accessToken`, `expiresAt`, `user`).
+
+오류: 401 `USER_INVALID_CREDENTIALS`(아이디가 없거나 비밀번호가 틀림 — 둘을 구분하지 않는다), 422 `COMMON_VALIDATION_FAILED`(빈 값)
+
+---
+
+### GET /api/users/me
+
+F1 내 정보. **토큰 필요**. 앱을 켤 때 저장된 토큰으로 불러 자동 로그인에 쓴다.
+
+```bash
+curl localhost:8080/api/users/me -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...'
+```
+
+응답 200
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": { "userId": "linh_2026", "name": "린", "nationality": "VN", "language": "VI" }
+}
+```
+
+오류: 401 `USER_LOGIN_REQUIRED`(토큰 없음), 401 `USER_INVALID_TOKEN`(잘못됐거나 만료된 토큰 — 로그인 화면으로), 404 `USER_NOT_FOUND`(토큰의 사용자가 없어짐)
+
+---
+
+### PATCH /api/users/me
+
+F1 내 정보 수정. **토큰 필요**. 이름·국적·언어 중 **보낸 것만** 바꾼다. 아이디는 바꿀 수 없다.
+
+```json
+{ "language": "EN" }
+```
+
+| 필드 | 설명 |
+|---|---|
+| name | 1~20자 (앞뒤 공백은 지운다). 빈 문자열은 422 |
+| nationality | 국적 코드 |
+| language | 언어 코드. 바꾸면 이후 추천 이유·장면·번역이 이 언어로 온다 |
+
+응답 200 — 바뀐 뒤의 내 정보 (`GET /api/users/me`와 같은 형식)
+
+오류: 401 `USER_LOGIN_REQUIRED`·`USER_INVALID_TOKEN`, 422 `COMMON_VALIDATION_FAILED`(빈 이름, 20자 초과), 400 `COMMON_INVALID_REQUEST`(없는 코드값)
 
 ---
 
 ### GET /api/users/{userId}
 
-저장해 둔 `userId`로 사용자를 조회한다. 앱을 다시 열 때 기기에 저장된 `userId`가 아직 유효한지 확인하는 데 쓴다.
+사용자 조회. **토큰 필요, 본인만**. 보통은 `GET /api/users/me`를 쓴다.
 
-응답 200 — `data` 형식은 `POST /api/users`와 같다.
+응답 200 — `GET /api/users/me`와 같은 형식
 
-오류: 404 `USER_NOT_FOUND`(없는 userId — 처음 설정으로 돌아간다)
+오류: 401 `USER_LOGIN_REQUIRED`·`USER_INVALID_TOKEN`, 403 `USER_FORBIDDEN`(다른 사람), 404 `USER_NOT_FOUND`
 
 ---
 
@@ -266,7 +372,7 @@ F2 지금 추천. 앱을 열자마자 질문 없이 부른다. 지금 시간·�
 기준 위치 = `lat`·`lng` → 없으면 `stationId` → 둘 다 없으면 기본 역(독립문).
 
 ```bash
-curl 'localhost:8080/api/now?userId=3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c&stationId=12&weather=RAINY&time=15:00'
+curl 'localhost:8080/api/now?userId=linh_2026&stationId=12&weather=RAINY&time=15:00'
 ```
 
 응답 200
@@ -454,11 +560,11 @@ curl -X POST localhost:8080/api/explanations -H 'Content-Type: application/json'
 | 파트 | 타입 | 필수 | 설명 |
 |---|---|---|---|
 | file | file | O | 10MB 이하, `image/jpeg`·`image/png`·`image/webp` (HEIC 불가 — 아이폰 사진은 프론트에서 jpeg로 바꿔 보낸다) |
-| userId | string | O | `POST /api/users`가 돌려준 userId |
+| userId | string | O | 로그인 아이디 (토큰의 사용자와 같아야 한다) |
 | placeId | number | - | 찍은 장소 ID |
 
 ```bash
-curl -F file=@photo.jpg -F userId=3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c -F placeId=7 localhost:8080/api/photos
+curl -F file=@photo.jpg -F userId=linh_2026 -F placeId=7 localhost:8080/api/photos
 ```
 
 응답 201
@@ -551,7 +657,7 @@ F6 한걸음 목록. 장소의 한걸음을 최신순으로 주고, 원문 언�
 보는 사람 언어 = `language` → 없으면 `userId`의 언어 → 둘 다 없으면 `KO`.
 
 ```bash
-curl 'localhost:8080/api/places/7/reviews?userId=3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c'
+curl 'localhost:8080/api/places/7/reviews?userId=linh_2026'
 ```
 
 응답 200
@@ -612,13 +718,13 @@ F6 한걸음 작성. 장소에 한 줄 후기를 남긴다. 저장 전에 두 �
 
 | 필드 | 타입 | 필수 | 설명 |
 |---|---|---|---|
-| userId | string | O | `POST /api/users`가 돌려준 userId |
+| userId | string | O | 로그인 아이디 (토큰의 사용자와 같아야 한다) |
 | content | string | O | 한 줄 후기, 200자 이하. 앞뒤 공백은 지운다 |
 | language | string | - | 실제로 쓴 언어 (`KO, EN, VI, ZH, JA, MN, UZ`). 비우면 서버가 글을 보고 정한다. **사용자 설정 언어를 그대로 넣지 않는다** |
 | photoId | string | - | 첨부 사진. `POST /api/photos`로 먼저 올리고 받은 `photoId`. **내가 올린 사진만** 붙일 수 있다 |
 
 ```json
-{ "userId": "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c", "content": "아침에 오면 한적해서 사진 찍기 좋아요", "language": "KO",
+{ "userId": "linh_2026", "content": "아침에 오면 한적해서 사진 찍기 좋아요", "language": "KO",
   "photoId": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e" }
 ```
 
@@ -662,13 +768,13 @@ F7 회고 엽서 생성 시작. 사진 1장 + 한 문장을 템플릿에 넣은 
 
 | 필드 | 타입 | 필수 | 설명 |
 |---|---|---|---|
-| userId | string | O | `POST /api/users`가 돌려준 userId |
+| userId | string | O | 로그인 아이디 (토큰의 사용자와 같아야 한다) |
 | photoId | string | O | `POST /api/photos`로 올린 **내** 사진 |
 | comment | string | O | 엽서에 쓸 한 문장, 100자 이하 |
 | template | string | - | 템플릿. 지금은 `BASIC` 하나 (비우면 `BASIC`) |
 
 ```json
-{ "userId": "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c", "photoId": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+{ "userId": "linh_2026", "photoId": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
   "comment": "독립문 앞에서 처음으로 한국의 가을을 느꼈다" }
 ```
 
@@ -751,7 +857,7 @@ F5 방문 도장. 장소 근처(기본 200m)에 있으면 도장을 찍고, 이�
 
 | 필드 | 타입 | 필수 | 설명 |
 |---|---|---|---|
-| userId | string | O | `POST /api/users`가 돌려준 userId |
+| userId | string | O | 로그인 아이디 (토큰의 사용자와 같아야 한다) |
 | placeId | number | O | 도장을 찍을 장소 ID |
 | lat | number | O | 현재 위도 (-90~90) |
 | lng | number | O | 현재 경도 (-180~180) |
@@ -761,7 +867,7 @@ F5 방문 도장. 장소 근처(기본 200m)에 있으면 도장을 찍고, 이�
 시연에서는 도장을 찍을 **장소의 좌표**를 `lat`, `lng`로 보낸다. 역 좌표를 보내면 먼 장소에서 `VISIT_TOO_FAR`가 된다.
 
 ```json
-{ "userId": "3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c", "placeId": 34, "lat": 37.5743, "lng": 126.9555,
+{ "userId": "linh_2026", "placeId": 34, "lat": 37.5743, "lng": 126.9555,
   "simulatedWeather": "RAINY", "simulatedTime": "15:20" }
 ```
 
@@ -934,7 +1040,12 @@ curl 'localhost:8080/api/map/pins'
 | 400 | `COMMON_INVALID_REQUEST` | JSON 형식 오류, 필수 파라미터·파트 누락, 타입 불일치 |
 | 400 | `LLM_PROMPT_NOT_FOUND` | 등록되지 않은 promptKey |
 | 404 | `COMMON_NOT_FOUND` | 없는 경로 |
+| 401 | `USER_LOGIN_REQUIRED` | 토큰이 필요한 요청에 `Authorization` 헤더가 없음 |
+| 401 | `USER_INVALID_TOKEN` | 토큰이 잘못됐거나 만료됨 → 다시 로그인 |
+| 401 | `USER_INVALID_CREDENTIALS` | 로그인 아이디가 없거나 비밀번호가 틀림 |
+| 403 | `USER_FORBIDDEN` | 다른 사람의 userId로 요청함 |
 | 404 | `USER_NOT_FOUND` | 없는 userId |
+| 409 | `USER_LOGIN_ID_TAKEN` | 이미 사용 중인 아이디로 가입함 |
 | 404 | `PLACE_NOT_FOUND` | 없거나 노출하지 않는 장소 |
 | 404 | `STATION_NOT_FOUND` | 없는 stationId |
 | 404 | `RECOMMEND_NOT_FOUND` | 지금 추천할 장소가 없음 (노출 중이고 해설이 있는 장소가 하나도 없다) |

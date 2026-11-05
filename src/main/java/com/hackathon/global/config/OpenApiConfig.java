@@ -16,7 +16,10 @@ import com.hackathon.global.response.type.CommonErrorType;
 import com.hackathon.global.response.type.ErrorCode;
 import com.hackathon.global.response.type.ResultType;
 import com.hackathon.global.storage.StorageErrorType;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
@@ -62,9 +65,13 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI().info(new Info()
-                .title("서대문 발자취 API")
-                .version("v1")
-                .description("모든 JSON 응답은 ApiResult { resultType, httpStatusCode, code(실패 시), message, data }로 감싼다."));
+                        .title("서대문 발자취 API")
+                        .version("v1")
+                        .description("모든 JSON 응답은 ApiResult { resultType, httpStatusCode, code(실패 시), message, data }로 감싼다."))
+                // Swagger UI의 Authorize 버튼으로 로그인 토큰을 넣어 시험한다 (POST /api/auth/login의 accessToken)
+                .components(new Components().addSecuritySchemes("bearerAuth", new SecurityScheme()
+                        .type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")))
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
     }
 
     @Bean
