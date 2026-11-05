@@ -70,8 +70,10 @@ public record AppProperties(
             // http로 부르면 302로 https에 리다이렉트되므로 처음부터 https를 쓴다
             @DefaultValue("https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/TaimsKsccDvSubwayStationGeom/1.0") String baseUrl,
             @DefaultValue("true") boolean syncEnabled,
-            // 위치 거부 시 "역 선택" 목록에 보여줄 범위: 기준 역(app.demo.default-station)에서 이 거리 안의 역
-            @DefaultValue("3000") int selectableRadiusMeters
+            // 위치 거부 시 "역 선택" 목록: 서대문 생활권 역 이름(station.name과 정확히 같게). 이 순서대로 보여준다.
+            // 거리로 거르지 않는다 (3km 반경이면 가좌가 빠지고 시청·명동이 들어간다). 같은 이름의 호선은 모두 보여준다
+            @DefaultValue({"독립문", "무악재", "홍제", "서대문", "충정로(경기대입구)", "아현", "이대", "신촌", "가좌"})
+            List<String> selectableNames
     ) {
     }
 
