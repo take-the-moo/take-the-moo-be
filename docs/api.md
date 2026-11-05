@@ -294,6 +294,65 @@ F3 맞춤 장면. 장소 이야기를 요청 언어와 쉬운 한국어로, 관�
 
 ---
 
+### GET /api/places/{placeId}/reviews
+
+F6 한걸음 목록. 장소의 한걸음을 최신순으로 주고, 원문 언어가 보는 사람 언어와 다르면 번역을 함께 준다.
+
+쿼리 (모두 선택)
+
+| 이름 | 설명 |
+|---|---|
+| language | 보는 사람 언어 (`KO, EN, VI, ZH, JA, MN, UZ`). userId보다 우선한다 |
+| userId | 보는 사람. `language`가 없으면 이 사용자의 언어로 번역한다 |
+| limit | 개수. 기본 20, 최대 50 |
+
+보는 사람 언어 = `language` → 없으면 `userId`의 언어 → 둘 다 없으면 `KO`.
+
+```bash
+curl 'localhost:8080/api/places/7/reviews?userId=3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c'
+```
+
+응답 200
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 200,
+  "message": "요청에 성공하였습니다.",
+  "data": {
+    "placeId": 7,
+    "viewerLanguage": "VI",
+    "reviews": [
+      {
+        "reviewId": 12,
+        "content": "아침에 오면 한적해서 사진 찍기 좋아요",
+        "language": "KO",
+        "translatedContent": "Buổi sáng vắng người nên chụp ảnh rất đẹp",
+        "nationality": "JP",
+        "writtenDate": "2026-11-07"
+      },
+      {
+        "reviewId": 9,
+        "content": "Đẹp lắm",
+        "language": "VI",
+        "translatedContent": null,
+        "nationality": "VN",
+        "writtenDate": "2026-11-06"
+      }
+    ]
+  }
+}
+```
+
+- `translatedContent`가 `null`이면 원문(`content`)을 보여 준다. 원문 언어가 보는 사람 언어와 같거나, 번역에 실패한 경우다 (실패해도 목록은 200으로 온다)
+- 번역은 서버에 저장해 두므로 같은 한걸음 × 언어는 두 번째부터 바로 온다. 처음 번역할 때만 AI 호출로 1~2초 걸린다
+- 작성자 ID와 작성 시각은 내보내지 않는다. 날짜(`writtenDate`)와 국적까지만
+- 목 모드에서는 번역이 `[MOCK VI] 원문` 형태로 온다
+
+오류: 404 `PLACE_NOT_FOUND`, 404 `USER_NOT_FOUND`(없는 userId), 400 `COMMON_INVALID_REQUEST`(없는 언어 코드, 숫자가 아닌 limit)
+
+---
+
 ### POST /api/places/{placeId}/reviews
 
 F6 한걸음 작성. 장소에 한 줄 후기를 남긴다. 저장 전에 두 번 거르고, 걸리면 저장하지 않는다.
