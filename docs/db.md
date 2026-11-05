@@ -11,8 +11,8 @@
 | 테이블 | 엔티티 | 패키지 | 기능 | 상태 |
 |---|---|---|---|---|
 | `app_user` | `AppUser` | `domain/user` | F1 | 구현 전 |
-| `place` | `Place` | `domain/place` | 공통 | 구현됨, 컬럼 1개 전환 예정 |
-| `place_time_slot` | `Place`의 컬렉션 | `domain/place` | F2 | 전환 예정 |
+| `place` | `Place` | `domain/place` | 공통 | 구현됨 |
+| `place_time_slot` | `Place`의 컬렉션 | `domain/place` | F2 | 구현됨 |
 | `station` | `Station` | `domain/place` | F2 | 구현됨 |
 | `photo` | `Photo` | `domain/photo` | F4·F6·F7 | 구현 전 |
 | `visit` | `Visit` | `domain/visit` | F5·F6·F2 | 구현 전 |
@@ -65,17 +65,13 @@ erDiagram
 - `@Lob String`은 MySQL에서 `LONGTEXT`가 된다. 긴 글에 쓴다.
 - 유니크 제약과 인덱스는 `@Table(uniqueConstraints = ..., indexes = ...)`로 선언한다.
 
-### enum 컬럼은 반드시 VARCHAR로 만든다
-`@Enumerated(EnumType.STRING)`만 쓰면 MySQL 네이티브 `enum('A','B')` 컬럼이 된다. `ddl-auto: update`는 이 정의를 고치지 않으므로, 나중에 상수를 추가하면 INSERT가 실패할 수 있다.
-
-```java
-@Enumerated(EnumType.STRING)
-@Column(nullable = false, columnDefinition = "varchar(20)")
-private PostcardStatus status;
-```
+### enum 컬럼
+`@Enumerated(EnumType.STRING)` + `@Column(nullable = false, length = 20)`으로 만든다. MySQL에서는 네이티브 `enum('A','B')` 컬럼이 되고, 상수를 추가하면 서버를 켤 때 자동으로 반영된다.
 
 ### 스키마를 바꾼 뒤
-`ddl-auto: update`는 컬럼을 추가만 하고, 삭제·이름 변경·타입 변경은 하지 않는다. 컬럼을 지우거나 바꿨다면 이 문서를 고치고 팀에 알린 뒤, 각자 로컬 DB를 초기화한다. 저장된 데이터가 모두 사라지고, `place`·`station`은 서버를 켤 때 다시 동기화된다.
+`ddl-auto: update`는 서버를 켤 때 새 테이블·컬럼을 만들고 컬럼 타입도 맞춘다. 컬럼은 지우지 않으므로 쓰지 않는 컬럼이 남지만, NULL을 허용하는 컬럼이면 동작에는 문제가 없다. 컬럼 이름을 바꾸면 새 컬럼이 생길 뿐 데이터는 옮겨지지 않는다.
+
+스키마를 바꾸면 이 문서를 고치고 팀에 알린다. 남은 컬럼까지 지우고 싶을 때만 로컬 DB를 초기화한다. 저장된 데이터가 모두 사라지고, `place`·`station`은 키가 있으면 서버를 켤 때 다시 동기화된다.
 
 ```bash
 docker compose down -v
@@ -87,8 +83,8 @@ docker compose down -v
 | 컬럼 | 타입 | NULL | 설명 |
 |---|---|---|---|
 | `id` | VARCHAR(36) PK | N | 서버가 만든 UUID. 프론트가 기기에 저장한다 |
-| `nationality` | VARCHAR(20) | N | `Nationality` |
-| `language` | VARCHAR(20) | N | `Language` |
+| `nationality` | ENUM | N | `Nationality` |
+| `language` | ENUM | N | `Language` |
 | `sample` | BOOLEAN | N | 샘플 사용자면 true |
 
 샘플 사용자도 여기에 행으로 넣는다. 샘플 방문·한걸음은 이 사용자의 `sample`로 구분한다.
@@ -113,15 +109,16 @@ docker compose down -v
 - 추천·후보에는 `ACTIVE`만 쓴다.
 - 현장 해설 원문은 `Place.fieldExplanation()`을 쓴다.
 - 사라진 장소는 지우지 않고 `INACTIVE`로 바꾼다. 방문과 한걸음이 참조하기 때문이다.
-- **전환 예정:** 지금 코드에는 `recommended_time_slots`(쉼표 문자열)가 있다. `place_time_slot`으로 옮기고 삭제한다.
 
-### `place_time_slot` 장소별 추천 시간대 (전환 예정)
+### `place_time_slot` 장소별 추천 시간대
 | 컬럼 | 타입 | NULL | 설명 |
 |---|---|---|---|
 | `place_id` | BIGINT PK | N | |
-| `time_slot` | VARCHAR(20) PK | N | `MORNING`(06–11), `AFTERNOON`(11–17), `EVENING`(17–21) |
+| `time_slot` | ENUM PK | N | `MORNING`(06–11), `AFTERNOON`(11–17), `EVENING`(17–21) |
 
-`Place`의 `@ElementCollection`으로 만든다. 전환 PR이 머지되기 전에 F2를 구현한다면 문자열 해석을 한곳에만 두어 쉽게 바꿀 수 있게 한다.
+- `Place.getTimeSlots()`로 읽는다. 값은 `global/common/TimeSlot`이다.
+- 장소 동기화 때 채워진다. TourAPI 키가 없거나 동기화를 끄면 새로 채워지지 않는다.
+- `PlaceSyncService`가 트랜잭션 없이 돌기 때문에 `EAGER`로 읽는다. `postcard_photo`처럼 트랜잭션 안에서만 읽는 컬렉션은 기본값(LAZY)을 쓴다.
 
 ### `station` 지하철역
 | 컬럼 | 타입 | NULL | 설명 |
@@ -167,7 +164,7 @@ docker compose down -v
 | `place_id` | BIGINT | N | |
 | `user_id` | VARCHAR(36) | N | |
 | `content` | VARCHAR(200) | N | 한 줄 후기 원문 |
-| `language` | VARCHAR(20) | N | 실제 작성 언어 |
+| `language` | ENUM | N | 실제 작성 언어 |
 | `photo_id` | VARCHAR(36) | Y | |
 
 - 인덱스: (`place_id`, `created_at`)
@@ -180,7 +177,7 @@ docker compose down -v
 |---|---|---|---|
 | `id` | BIGINT PK | N | |
 | `review_id` | BIGINT | N | |
-| `language` | VARCHAR(20) | N | 번역 언어 |
+| `language` | ENUM | N | 번역 언어 |
 | `translated_content` | VARCHAR(1000) | N | |
 
 유니크: (`review_id`, `language`). 보는 사람의 언어가 원문과 같으면 번역하지 않는다.
@@ -190,7 +187,7 @@ docker compose down -v
 |---|---|---|---|
 | `id` | BIGINT PK | N | |
 | `place_id` | BIGINT | N | |
-| `language` | VARCHAR(20) | N | 번역 언어 |
+| `language` | ENUM | N | 번역 언어 |
 | `translated_text` | LONGTEXT | N | |
 | `source_hash` | VARCHAR(64) | N | 번역에 쓴 `fieldExplanation()`의 SHA-256 |
 
@@ -201,8 +198,8 @@ docker compose down -v
 |---|---|---|---|
 | `id` | BIGINT PK | N | |
 | `place_id` | BIGINT | N | |
-| `nationality` | VARCHAR(20) | N | 이야기를 맞춘 국적 |
-| `language` | VARCHAR(20) | N | 모국어 이야기의 언어 |
+| `nationality` | ENUM | N | 이야기를 맞춘 국적 |
+| `language` | ENUM | N | 모국어 이야기의 언어 |
 | `story_native` | LONGTEXT | N | |
 | `story_easy_korean` | LONGTEXT | N | |
 | `connection_line` | VARCHAR(300) | N | 내 나라와 한 줄 연결 |
@@ -218,8 +215,8 @@ docker compose down -v
 | `id` | VARCHAR(36) PK | N | UUID |
 | `user_id` | VARCHAR(36) | N | |
 | `comment` | VARCHAR(100) | N | 소감 |
-| `style` | VARCHAR(20) | N | 그림체 |
-| `status` | VARCHAR(20) | N | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED` |
+| `style` | ENUM | N | 그림체 |
+| `status` | ENUM | N | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED` |
 | `image_name` | VARCHAR(100) | Y | 완료된 파일 이름 |
 | `error_code` | VARCHAR(50) | Y | 실패 사유 |
 

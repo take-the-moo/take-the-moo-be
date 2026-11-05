@@ -55,7 +55,7 @@ Swagger: http://localhost:8080/swagger-ui.html · 프론트 명세: `docs/api.md
 com.hackathon
 ├── global/
 │   ├── config/      AppProperties(app.*), JpaConfig(auditing), LlmProperties, AnthropicConfig, OpenApiConfig, WebConfig
-│   ├── common/      Nationality, Language — 여러 도메인이 같이 쓰는 코드값
+│   ├── common/      Nationality, Language, TimeSlot — 여러 도메인이 같이 쓰는 코드값
 │   ├── entity/      BaseTimeEntity — createdAt·updatedAt 자동 (서울 시간)
 │   ├── util/        SeoulTime(오늘·지금, Asia/Seoul), GeoUtils(거리 m)
 │   ├── external/    ExternalHttp(외부 GET+JSON, 키 인코딩·XML 오류 처리), ExternalApiException, PublicDataHeader
@@ -72,7 +72,7 @@ com.hackathon
 - 다른 도메인 데이터가 필요하면 그 도메인의 service 메서드를 호출한다 (repository를 직접 쓰지 않는다)
 
 ## 공통 코드값
-- 국적 `Nationality`: `VN, CN, JP, MN, UZ, US, OTHER` / 언어 `Language`: `KO, EN, VI, ZH, JA, MN, UZ`. API에서는 상수 이름 그대로 주고받는다
+- 국적 `Nationality`: `VN, CN, JP, MN, UZ, US, OTHER` / 언어 `Language`: `KO, EN, VI, ZH, JA, MN, UZ` / 시간대 `TimeSlot`: `MORNING, AFTERNOON, EVENING`. API에서는 상수 이름 그대로 주고받는다
 - 시간·날짜는 `SeoulTime.now()/today()`를 쓴다 (`LocalDateTime.now()` 직접 금지 — 컨테이너는 UTC)
 - 엔티티는 `BaseTimeEntity`를 상속한다
 - 사용자는 로그인 없는 익명 사용자. `userId`는 서버가 만든 UUID 문자열이고 프론트가 기기에 저장한다
