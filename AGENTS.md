@@ -138,7 +138,7 @@ com.hackathon
 - **샘플 데이터**: 지도가 비어 보이지 않게 장소별 한걸음 3~5개, 국적이 섞인 방문 기록을 샘플로 넣는다 (사용자 데이터라 TourAPI와 별개). 샘플임을 구분할 수 있게 한다
 
 ## LLM 규칙
-- 프롬프트 문자열은 Java 코드에 쓰지 않는다. `src/main/resources/prompts.yml`에만 (model, temperature, max-tokens, system, defaults). 장소 데이터 같은 입력값은 user 메시지로 넘긴다
+- 프롬프트 문자열은 Java 코드에 쓰지 않는다. `src/main/resources/prompts.yml`에만 (model, max-tokens, system, defaults — Claude 5 모델은 temperature를 보내면 400으로 거절하니 넣지 않는다). 장소 데이터 같은 입력값은 user 메시지로 넘긴다
 - ChatClient는 `LlmClient`에서만 호출한다 (목 모드 분기·타임아웃·예외 변환·로깅이 거기 있다). 도메인 서비스는 `PromptRegistry.resolve()` → `LlmClient.call/entity()`를 쓴다
 - 구조화 출력은 record DTO + `static mock()` + `LlmClient.entity(...)`
 - 새 AI 기능은 한 세트로 추가한다: **promptKey + 요청/응답 DTO + 서비스 메서드 + 엔드포인트 + mock 응답 + 테스트 + docs/api.md** → `/ai-feature <설명>`

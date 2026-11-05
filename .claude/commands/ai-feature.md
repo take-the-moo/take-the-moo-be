@@ -13,7 +13,7 @@ argument-hint: <기능 설명>
    - 자유 텍스트면 `ChatResponseDto` 재사용 + `LlmClient.call(...)`
    - 정해진 JSON이면 새 record DTO + `LlmClient.entity(prompt, input, Dto.class, Dto::mock)` (StructuredOutputValidationAdvisor가 자동 적용)
    - 실시간 표시가 필요하면 `LlmClient.stream(...)` + SSE
-3. **prompts.yml** — `llm.prompts.<promptKey>`에 model, temperature, max-tokens, system(`|` 여러 줄, `{변수}`), 필요하면 defaults. 프롬프트 문자열은 Java에 쓰지 않는다.
+3. **prompts.yml** — `llm.prompts.<promptKey>`에 model, max-tokens (temperature는 넣지 않는다 — Claude 5 모델이 거절), system(`|` 여러 줄, `{변수}`), 필요하면 defaults. 프롬프트 문자열은 Java에 쓰지 않는다.
 4. **DTO** — `dto/request/XxxRequestDto` (record, jakarta validation + `@Schema(example)`), 구조화 출력이면 `dto/response/Xxx` (record, 필드마다 `@Schema(description)` — LLM 스키마가 된다) + `static Xxx mock()`.
 5. **서비스** — `LlmService`에 메서드 추가: `promptRegistry.resolve(key, params)` → `llmClient.xxx(...)`.
 6. **엔드포인트** — `LlmController`(또는 새 컨트롤러)에 `@Operation` 달고 `ApiResponse.of(SuccessType.SUCCESS, data)` 반환.
