@@ -3,6 +3,7 @@ package com.hackathon.global.config;
 import com.hackathon.domain.llm.exception.LlmErrorType;
 import com.hackathon.domain.photo.exception.PhotoErrorType;
 import com.hackathon.domain.place.exception.PlaceErrorType;
+import com.hackathon.domain.postcard.exception.PostcardErrorType;
 import com.hackathon.domain.review.exception.ReviewErrorType;
 import com.hackathon.domain.scene.exception.SceneErrorType;
 import com.hackathon.domain.user.exception.UserErrorType;
@@ -43,6 +44,7 @@ public class OpenApiConfig {
                     PhotoErrorType.values(),
                     ExternalApiErrorType.values(),
                     PlaceErrorType.values(),
+                    PostcardErrorType.values(),
                     SceneErrorType.values(),
                     UserErrorType.values(),
                     ReviewErrorType.values(),

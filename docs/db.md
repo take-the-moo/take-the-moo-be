@@ -20,7 +20,7 @@
 | `review_translation` | `ReviewTranslation` | `domain/review` | F6 | 구현됨 |
 | `explanation_translation` | `ExplanationTranslation` | `domain/place` | F4 | 구현 전 |
 | `scene` | `Scene` | `domain/scene` | F3 | 구현됨 |
-| `postcard` | `Postcard` | `domain/postcard` | F7 | 구현 전 |
+| `postcard` | `Postcard` | `domain/postcard` | F7 | 구현됨 |
 
 점선은 ID로만 참조하는 관계다. 외래 키는 만들지 않는다. `station`은 다른 테이블과 연결되지 않는다.
 
@@ -214,7 +214,7 @@ docker compose down -v
 - 사용자의 국적이 아니라 요청한 국적으로 캐시한다. 그래서 `app_user`의 복사본이 아니다.
 
 ### `postcard` 회고 엽서
-사진 1장 + 한 문장을 팀이 만든 템플릿에 넣어 이미지 한 장(JPEG)으로 만든다. AI(OpenAI)는 사진을 템플릿 그림체로 다시 그리기만 하고, 제목(사용자 언어로 날짜·장소)과 한 문장은 서버가 템플릿 글꼴로 쓴다.
+원본 사진 1장 + 한 문장을 팀이 만든 템플릿에 넣어 이미지 한 장(JPEG)으로 만든다. 사진은 다시 그리지 않고 그대로 쓴다. AI(Claude)는 제목 한 줄(사용자 언어로 날짜·장소)만 쓰고, 글씨는 서버가 템플릿 글꼴로 쓴다.
 
 | 컬럼 | 타입 | NULL | 설명 |
 |---|---|---|---|
@@ -222,14 +222,14 @@ docker compose down -v
 | `user_id` | VARCHAR(36) | N | |
 | `photo_id` | VARCHAR(36) | N | 엽서에 쓴 사진. 요청한 사용자의 사진이어야 한다 |
 | `comment` | VARCHAR(100) | N | 사용자가 쓴 한 문장. 템플릿 글씨 칸에 맞춰 더 줄일 수 있다 |
-| `template` | ENUM | N | 템플릿. 처음엔 1개, 나중에 2~3개 |
+| `template` | ENUM | N | 템플릿 `BASIC`(임시). 나중에 2~3개. 배치·배경·글꼴은 `resources/postcard/templates.json` |
 | `status` | ENUM | N | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED` |
 | `image_name` | VARCHAR(100) | Y | 완료된 파일 이름 (`app.storage.dir`) |
 | `error_code` | VARCHAR(50) | Y | 실패 사유 |
 
 - 인덱스: (`user_id`, `status`)
 - 생성은 비동기다. 요청 즉시 `PENDING`으로 저장하고 `id`를 돌려준 뒤 백그라운드에서 만든다. 서버가 다시 켜질 때 `PENDING`·`PROCESSING`으로 남은 행은 `FAILED`로 바꾼다.
-- 목 모드·OpenAI 키 없음·이미지 생성 실패면 원본 사진을 그대로 템플릿에 넣어 `COMPLETED`로 만든다. `FAILED`는 사진 파일이 없는 것처럼 엽서를 아예 만들 수 없을 때만 쓴다.
+- 목 모드·제목 AI 실패면 기본 제목(언어별 날짜 · 한국어 장소)으로 `COMPLETED`까지 만든다. `FAILED`는 사진 파일이 없거나 사진을 읽지 못해 엽서를 아예 만들 수 없을 때만 쓴다.
 - 제목 문구는 이미지에 바로 쓰므로 저장하지 않는다.
 
 ## 도메인 간에 쓰는 서비스
