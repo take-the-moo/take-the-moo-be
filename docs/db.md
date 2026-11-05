@@ -14,7 +14,7 @@
 | `place` | `Place` | `domain/place` | 공통 | 구현됨 |
 | `place_time_slot` | `Place`의 컬렉션 | `domain/place` | F2 | 구현됨 |
 | `station` | `Station` | `domain/place` | F2 | 구현됨 |
-| `photo` | `Photo` | `domain/photo` | F4·F6·F7 | 구현 전 |
+| `photo` | `Photo` | `domain/photo` | F4·F6·F7 | 구현됨 |
 | `visit` | `Visit` | `domain/visit` | F5·F6·F2 | 구현 전 |
 | `review` | `Review` | `domain/review` | F6·F3 | 구현됨 |
 | `review_translation` | `ReviewTranslation` | `domain/review` | F6 | 구현됨 |
@@ -237,7 +237,7 @@ docker compose down -v
 | `domain/user` | `UserService.getUser(userId)` | 사용자 확인이 필요한 모든 기능 |
 | `domain/place` | `PlaceService`의 `ACTIVE` 장소 조회 | F2, F3, F4, F5, F6 |
 | `domain/visit` | `VisitService.topPlaces(from, to, limit)` | F2 지난주 인기 |
-| `domain/photo` | `PhotoService`의 소유자 확인·사진 조회·파일 읽기 | F4, F6, F7 |
+| `domain/photo` | `PhotoService.getOwnedPhoto(userId, photoId)` → 소유자 확인 + `PhotoInfo`(403 `PHOTO_FORBIDDEN`), `getPhoto(photoId)`, `getFile(photoId)` → 파일 | F4, F6, F7 |
 | `domain/review` | `ReviewService`의 장소별 한걸음 조회 | F3 |
 
 ## 저장하지 않는 것

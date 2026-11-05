@@ -1,6 +1,7 @@
 package com.hackathon.global.config;
 
 import com.hackathon.domain.llm.exception.LlmErrorType;
+import com.hackathon.domain.photo.exception.PhotoErrorType;
 import com.hackathon.domain.place.exception.PlaceErrorType;
 import com.hackathon.domain.review.exception.ReviewErrorType;
 import com.hackathon.domain.scene.exception.SceneErrorType;
@@ -38,6 +39,7 @@ public class OpenApiConfig {
     private static final List<ErrorCode> ERROR_TYPES = Stream.<ErrorCode[]>of(
                     CommonErrorType.values(),
                     LlmErrorType.values(),
+                    PhotoErrorType.values(),
                     ExternalApiErrorType.values(),
                     PlaceErrorType.values(),
                     SceneErrorType.values(),

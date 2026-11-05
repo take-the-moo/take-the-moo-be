@@ -249,6 +249,52 @@ F1 처음 설정. 국적·언어로 익명 사용자를 만든다. 응답의 `us
 
 ---
 
+### POST /api/photos
+
+사진 업로드 (F4·F6·F7 공통). 받은 `photoId`를 한걸음·엽서 요청에 넣는다.
+
+요청 `Content-Type: multipart/form-data`
+
+| 파트 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| file | file | O | 10MB 이하, `image/jpeg`·`image/png`·`image/webp` (HEIC 불가 — 아이폰 사진은 프론트에서 jpeg로 바꿔 보낸다) |
+| userId | string | O | `POST /api/users`가 돌려준 userId |
+| placeId | number | - | 찍은 장소 ID |
+
+```bash
+curl -F file=@photo.jpg -F userId=3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c -F placeId=7 localhost:8080/api/photos
+```
+
+응답 201
+
+```json
+{
+  "resultType": "SUCCESS",
+  "httpStatusCode": 201,
+  "message": "성공적으로 생성하였습니다.",
+  "data": {
+    "photoId": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+    "url": "/api/photos/9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+    "placeId": 7
+  }
+}
+```
+
+- `url`은 서버 기준 경로다. 서버 주소를 앞에 붙여 `<img src>`에 쓴다
+- 올린 시각과 작성자는 내보내지 않는다
+
+오류: 422 `COMMON_VALIDATION_FAILED`(형식·크기, userId 누락), 400 `COMMON_INVALID_REQUEST`(file 파트 없음), 404 `USER_NOT_FOUND`, 404 `PLACE_NOT_FOUND`
+
+---
+
+### GET /api/photos/{photoId}
+
+사진 파일. JSON이 아니라 이미지 바이트를 그대로 준다 (`Content-Type`은 올린 형식). 한 번 올린 사진은 바뀌지 않아 7일 캐시한다.
+
+오류(JSON): 404 `PHOTO_NOT_FOUND`(없는 photoId), 404 `STORAGE_NOT_FOUND`(기록은 있는데 파일이 없음 — 서버 저장소가 지워진 경우)
+
+---
+
 ### POST /api/scenes
 
 F3 맞춤 장면. 장소 이야기를 요청 언어와 쉬운 한국어로, 관점 국적의 역사와 잇는 한 줄과 함께 돌려준다.
@@ -420,12 +466,16 @@ F6 한걸음 작성. 장소에 한 줄 후기를 남긴다. 저장 전에 두 �
 | 404 | `COMMON_NOT_FOUND` | 없는 경로 |
 | 404 | `USER_NOT_FOUND` | 없는 userId |
 | 404 | `PLACE_NOT_FOUND` | 없거나 노출하지 않는 장소 |
+| 403 | `PHOTO_FORBIDDEN` | 다른 사용자의 사진을 한걸음·엽서에 쓰려 함 |
+| 404 | `PHOTO_NOT_FOUND` | 없는 photoId |
+| 404 | `STORAGE_NOT_FOUND` | 파일 기록은 있는데 저장소에 파일이 없음 |
 | 405 | `COMMON_METHOD_NOT_ALLOWED` | 지원하지 않는 HTTP 메서드 |
 | 415 | `COMMON_UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 422 | `COMMON_VALIDATION_FAILED` | 값 검증 실패 (빈 메시지, 길이 초과, 이미지 형식·크기). message에 필드별 사유 |
 | 422 | `SCENE_SOURCE_MISSING` | 장소에 이야기를 만들 설명(해설·개요)이 없음 |
 | 422 | `REVIEW_INAPPROPRIATE` | 한걸음에 욕설·혐오·광고·연락처가 있음. 저장되지 않는다 |
 | 500 | `COMMON_INTERNAL_ERROR` | 서버 내부 오류 |
+| 500 | `STORAGE_WRITE_FAILED` | 파일을 저장하지 못함 |
 | 502 | `LLM_CALL_FAILED` | AI 호출 실패 (인증·요청 한도·서버 오류 등) |
 | 502 | `LLM_INVALID_OUTPUT` | AI 응답을 정해진 구조로 해석하지 못함 (재시도 후에도) |
 | 504 | `LLM_TIMEOUT` | AI 응답 시간 초과 (연결 5초, 응답 대기 60초) |
