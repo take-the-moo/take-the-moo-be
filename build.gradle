@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.hackathon'
 version = '0.0.1-SNAPSHOT'
-description = 'Hackathon generic LLM API server'
+description = 'Seodaemun footprints API server for international students'
 
 java {
 	toolchain {

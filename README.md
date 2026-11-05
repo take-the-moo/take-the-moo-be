@@ -1,7 +1,9 @@
-# Hackathon LLM API
+# 서대문 발자취 API
 
-주제가 무엇이든 `prompts.yml`과 DTO만 바꿔서 바로 쓰는 범용 LLM API 서버.
-Java 25 · Spring Boot 4.1 · Spring AI 2.0 (Anthropic) · DB 없음.
+서대문에 온 유학생에게 지금 갈 장소를 추천하고, 모국어와 내 나라 이야기로 장소를 풀어주고, 방문 도장·한걸음·회고 엽서로 발자취를 남기게 하는 서비스의 백엔드.
+Java 25 · Spring Boot 4.1 · Spring AI 2.0 (Anthropic) · MySQL 8.4.
+
+기능·패키지·서비스 원칙은 [AGENTS.md](AGENTS.md)에 있다.
 
 ## 실행
 
@@ -49,21 +51,22 @@ curl -X POST localhost:8080/api/analyze -H 'Content-Type: application/json' \
 curl -F file=@photo.png -F question="뭐가 보여?" localhost:8080/api/image
 ```
 
-## 당일 순서 (18시 주제 공개 후)
+## 작업 방법
 
-1. **AGENTS.md** — "주제", "핵심 장면" 빈칸을 채운다 (에이전트가 매번 읽는 컨텍스트)
-2. **prompts.yml** — `chat`/`analyze`/`image`의 system 프롬프트를 주제에 맞게 고친다. 필요하면 키를 추가한다
-3. **/ai-feature <설명>** — Claude Code에서 새 기능을 한 세트로 추가한다
+1. AGENTS.md의 "기능과 API" 표에서 작업할 기능의 패키지를 확인한다 (에이전트는 AGENTS.md를 자동으로 읽는다)
+2. AI가 들어가는 기능은 **/ai-feature <설명>** 으로 한 세트를 만든다
    (promptKey + DTO + 서비스 + 엔드포인트 + mock 응답 + 테스트 + docs/api.md, 끝에 목 모드 curl 확인)
-   - 구조화 출력이 필요하면 `AnalysisResult`처럼 record DTO + `mock()`만 새로 만들면 된다
+3. 요청/응답 형식을 정하면 `docs/api.md`에 먼저 적어 프론트와 맞춘다
 4. **/demo-check** — 데모 전 목 모드로 전 엔드포인트 점검
 
 ## 구조
 
 ```
 src/main/java/com/hackathon
-├── global/{config, response, exception}   ApiResult·ErrorCode·GlobalExceptionHandler·CORS·Swagger·Anthropic 클라이언트
-└── domain/llm/{controller, service, dto, prompt, exception}
+├── global/{config, common, entity, util, response, exception}   설정·공통 코드값·BaseTimeEntity·ApiResult·예외 처리
+└── domain/
+    ├── llm/{controller, service, dto, prompt, exception}       LlmClient·PromptRegistry·범용 샘플 API
+    └── {user, recommend, scene, place, photo, visit, review, postcard}/   기능별 도메인 (AGENTS.md 참고)
 src/main/resources/{application.yml, prompts.yml}
 ```
 
@@ -83,3 +86,6 @@ src/main/resources/{application.yml, prompts.yml}
 | `DB_PORT` | `3307` | compose가 여는 MySQL 호스트 포트 |
 | `llm.timeout.connect` / `read` / `request` | 5s / 60s / 120s | LLM 호출 연결 / 응답 대기 / 전체 상한 |
 | `llm.max-retries` | 1 | SDK 재시도 횟수 |
+| `app.storage.dir` | `./uploads` | 사진·엽서 저장 디렉터리 |
+| `app.weather.kma-service-key` / `APP_WEATHER_KMA_SERVICE_KEY` | (없음) | 기상청 초단기실황 키 (Decoding 키). 없으면 시뮬레이션·기본 날씨 |
+| `app.demo.default-station` | `dongnimmun` | 위치·역을 못 받았을 때 기준 역 |

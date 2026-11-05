@@ -10,6 +10,9 @@ services:
       - ANTHROPIC_API_KEY
       - OPENAI_API_KEY
       - LLM_MOCK
+      - APP_WEATHER_KMA_SERVICE_KEY
+      # 컨테이너 기본 시간대는 UTC. 코드는 SeoulTime을 쓰지만 로그 시각도 서울로 맞춘다
+      - TZ=Asia/Seoul
     depends_on:
       mysql:
         condition: service_healthy

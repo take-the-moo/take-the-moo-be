@@ -31,5 +31,8 @@ bin/
 ### Claude (개인 설정) ###
 .claude/settings.local.json
 
+### 업로드 사진·생성 엽서 (app.storage.dir) ###
+/uploads/
+
 ### OS ###
 .DS_Store
