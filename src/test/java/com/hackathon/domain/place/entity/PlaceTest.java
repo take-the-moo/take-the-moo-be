@@ -67,6 +67,19 @@ class PlaceTest {
         assertThat(place.needsOverview("20261105000000")).isTrue();
     }
 
+    @Test
+    void 현장_해설은_팀_해설이_없으면_개요를_쓴다() {
+        Place place = tourPlace("14");
+        place.applyRules(null, true, false);
+        assertThat(place.fieldExplanation()).isNull();
+
+        place.updateOverview("TourAPI 개요");
+        assertThat(place.fieldExplanation()).isEqualTo("TourAPI 개요");
+
+        place.applyRules(new PlaceCuration("100", "장소", null, null, null, "팀이 쓴 해설"), true, false);
+        assertThat(place.fieldExplanation()).isEqualTo("팀이 쓴 해설");
+    }
+
     private static Place tourPlace(String contentTypeId) {
         Place place = Place.fromTour("100");
         place.updateTourInfo(contentTypeId, "장소", "서울", 37.57, 126.95, null, "20260101000000");

@@ -70,7 +70,7 @@ public class Place extends BaseTimeEntity {
     /** 식민지 역사가 얽힌 장소. 프롬프트에 "기억과 평화의 공간" 원칙을 건다 */
     private boolean sensitiveHistory;
 
-    /** 현장 해설 원문 (한국어). AI는 이걸 번역만 한다. 보강 파일에 없으면 null */
+    /** 팀이 쓴 현장 해설 (한국어). 보강 파일에 없으면 null — 해설 기능은 fieldExplanation()을 쓴다 */
     @Lob
     private String explanation;
 
@@ -129,6 +129,16 @@ public class Place extends BaseTimeEntity {
         if (excluded) this.status = PlaceStatus.EXCLUDED;
         else if (curation != null || autoActiveType) this.status = PlaceStatus.ACTIVE;
         else this.status = PlaceStatus.PENDING_REVIEW;
+    }
+
+    /**
+     * 현장 해설 원문 (F4). 팀이 쓴 해설이 있으면 그것, 없으면 TourAPI 개요. AI는 이 값을 번역만 한다.
+     * 둘 다 없으면 null — 해설 후보에서 뺀다.
+     */
+    public String fieldExplanation() {
+        if (explanation != null && !explanation.isBlank()) return explanation;
+        if (overview != null && !overview.isBlank()) return overview;
+        return null;
     }
 
     public void deactivate() {

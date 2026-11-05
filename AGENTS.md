@@ -98,9 +98,10 @@ com.hackathon
   | 출처 | 필드 |
   |---|---|
   | TourAPI | `contentId`(유니크 키), 이름, 주소, 좌표, 개요, 대표 이미지, `modifiedTime` |
-  | 보강 파일 (없으면 기본값) | 추천 시간대(문화시설 `MORNING,AFTERNOON` / 그 외 `MORNING,AFTERNOON,EVENING`), 실내 여부(문화시설이면 true), 민감한 역사 여부(false), 현장 해설 원문(null) |
+  | 보강 파일 (없으면 기본값) | 추천 시간대(문화시설 `MORNING,AFTERNOON` / 그 외 `MORNING,AFTERNOON,EVENING`), 실내 여부(문화시설이면 true), 민감한 역사 여부(false), 현장 해설(없으면 개요로 대신) |
 - **보강 파일** `src/main/resources/data/place-curation.json`: `{ excluded: [contentId…], excludedNames: [참고용 이름…], places: [{contentId, name, timeSlots?, indoor?, sensitiveHistory?, explanation?}] }`. 필요한 값만 적는다. 형식은 `PlaceCuration` 주석 참고. **고친 뒤 서버를 다시 켜면 반영된다**
-- 현장 해설(`explanation`)이 없는 장소는 해설 기능에서 TourAPI 개요로 대신하거나 후보에서 뺀다 (기능 구현 때 정한다)
+- **현장 해설 원문은 `Place.fieldExplanation()`을 쓴다**: 보강 파일 `explanation`이 있으면 그것, 없으면 TourAPI 개요(한국관광공사 공식 데이터). AI는 이 값을 번역만 한다. 둘 다 없으면 해설 후보에서 뺀다
+  - `explanation`은 개요를 고치고 싶을 때만 쓴다. 특히 `sensitiveHistory` 장소는 개요 어조가 "담담하게" 원칙과 맞는지 팀이 확인한다 (서대문형무소역사관 개요에 "일제 탄압기관", "모진 고문" 같은 표현이 있다)
 - 개요는 `ACTIVE` 장소 중 개요가 없거나 `modifiedTime`이 바뀐 것만 다시 받는다
 - **TourAPI에서 사라진 장소**는 지우지 않고 비활성으로 바꾼다 (방문 기록·한걸음이 placeId로 참조한다)
 - **실패해도 서버는 계속 돈다**: 호출 실패·키 없음이면 로그만 남기고 기존 DB 데이터를 유지한다

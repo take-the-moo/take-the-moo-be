@@ -14,7 +14,7 @@ import java.util.List;
  *   "timeSlots": ["MORNING", "AFTERNOON"],   // MORNING 06–11 · AFTERNOON 11–17 · EVENING 17–21
  *   "indoor": true,                           // 비 오면 실내만 추천
  *   "sensitiveHistory": true,                 // 식민지 역사가 얽힌 장소 → "기억과 평화의 공간" 원칙
- *   "explanation": "현장 해설 원문 (한국어)"    // AI는 번역만 한다
+ *   "explanation": "현장 해설 원문 (한국어)"    // 없으면 TourAPI 개요를 쓴다. 개요를 고치고 싶을 때만 적는다
  * }
  * </pre>
  */
