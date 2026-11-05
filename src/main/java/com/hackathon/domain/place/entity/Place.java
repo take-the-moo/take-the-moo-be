@@ -94,8 +94,9 @@ public class Place extends BaseTimeEntity {
     @Lob
     private String explanation;
 
+    // MySQL 네이티브 enum이 되면 상수를 추가할 때 INSERT가 실패한다 (docs/db.md "enum 컬럼은 반드시 VARCHAR로")
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, columnDefinition = "varchar(20)")
     private PlaceStatus status;
 
     public static Place fromTour(String contentId) {

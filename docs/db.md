@@ -104,7 +104,7 @@ docker compose down -v
 | `indoor` | BIT(1) | Y | 보강 파일 | 없으면 문화시설만 true |
 | `sensitive_history` | BIT(1) | N | 보강 파일 | 식민지 역사가 얽힌 장소 |
 | `explanation` | LONGTEXT | Y | 보강 파일 | 팀이 쓴 해설 |
-| `status` | ENUM | N | 규칙 | `ACTIVE`, `PENDING_REVIEW`, `EXCLUDED`, `INACTIVE` |
+| `status` | VARCHAR(20) | N | 규칙 | `ACTIVE`, `PENDING_REVIEW`, `EXCLUDED`, `INACTIVE` |
 
 - 추천·후보에는 `ACTIVE`만 쓴다.
 - 현장 해설 원문은 `Place.fieldExplanation()`을 쓴다.
