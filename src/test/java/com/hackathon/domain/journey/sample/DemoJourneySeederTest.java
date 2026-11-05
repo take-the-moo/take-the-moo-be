@@ -63,7 +63,7 @@ class DemoJourneySeederTest {
 
     private DemoJourneySeeder seeder(String value) throws IOException {
         AppProperties properties = new AppProperties(null, null, null, null,
-                new AppProperties.Demo("독립문", value), null, null);
+                new AppProperties.Demo("독립문", null, null, null, value), null, null);
         return new DemoJourneySeeder(userService, placeService, visitService, reviewService, properties, jsonMapper);
     }
 

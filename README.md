@@ -101,6 +101,7 @@ src/main/resources/{application.yml, prompts.yml}
 | `app.tour.service-key` / `APP_TOUR_SERVICE_KEY` | (없음) | TourAPI 키 (Decoding 키). 장소를 매일 04:00에 DB로 동기화. 없으면 건너뜀 |
 | `app.tour.sync-enabled` | `true` | 장소 동기화 켜기. 발표 전에는 `false` |
 | `app.station.api-key` / `APP_STATION_API_KEY` | (없음) | T Data 지하철역 좌표정보 인증키. 서버 시작 시(비어 있으면)와 장소 동기화 때 역을 DB로 동기화 |
-| `app.demo.default-station` | `독립문` | 위치·역을 못 받았을 때 기준 역 |
+| `app.demo.default-latitude` / `default-longitude` / `default-name` | `37.5803` / `126.9233` / `명지대 인문캠퍼스` | 위치·역을 못 받았을 때 기준 위치. 좌표를 비우면 `default-station`을 쓴다 |
+| `app.demo.default-station` | `독립문` | 기본 좌표가 비었을 때 기준 역, "역 선택" 목록의 기본 역 |
 | `app.demo.password` / `APP_DEMO_PASSWORD` | (없음) | 시연 계정 `demo_linh`의 비밀번호. 없으면 시연 계정을 만들지 않는다 |
 | `app.visit.stamp-radius-meters` | `200` | 방문 도장을 줄 장소 반경(미터) |

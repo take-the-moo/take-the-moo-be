@@ -62,13 +62,26 @@ class StationServiceTest {
     }
 
     @Test
-    void 아무것도_없으면_기본_역() {
-        saveStation("T9004", properties.demo().defaultStation(), "3호선", 37.574571, 126.957748);
-
+    void 아무것도_없으면_기본_위치_명지대_인문캠퍼스() {
         BaseLocation location = stationService.resolve(null, null, null);
 
         assertThat(location.source()).isEqualTo(BaseLocation.Source.DEFAULT);
+        assertThat(location.baseStation()).isEqualTo("명지대 인문캠퍼스");
+        assertThat(location.latitude()).isEqualTo(37.5803);
+        assertThat(location.longitude()).isEqualTo(126.9233);
+    }
+
+    @Test
+    void 기본_좌표를_비우면_기본_역() {
+        Station station = saveStation("T9004", "독립문", "3호선", 37.574571, 126.957748);
+        StationRepository repository = mock(StationRepository.class);
+        when(repository.findAllByName("독립문")).thenReturn(List.of(station));
+
+        BaseLocation location = new StationService(repository, withoutDefaultCoordinates()).resolve(null, null, null);
+
+        assertThat(location.source()).isEqualTo(BaseLocation.Source.DEFAULT);
         assertThat(location.baseStation()).isEqualTo("독립문");
+        assertThat(location.latitude()).isEqualTo(37.574571);
     }
 
     @Test
@@ -76,12 +89,20 @@ class StationServiceTest {
         StationRepository emptyRepository = mock(StationRepository.class);
         when(emptyRepository.findAllByName("독립문")).thenReturn(List.of());
 
-        BaseLocation location = new StationService(emptyRepository, properties).resolve(null, null, null);
+        BaseLocation location = new StationService(emptyRepository, withoutDefaultCoordinates()).resolve(null, null, null);
 
         assertThat(location.source()).isEqualTo(BaseLocation.Source.DEFAULT);
         assertThat(location.baseStation()).isEqualTo("독립문");
         assertThat(location.latitude()).isEqualTo(StationService.FALLBACK_LATITUDE);
         assertThat(location.longitude()).isEqualTo(StationService.FALLBACK_LONGITUDE);
+    }
+
+    /** app.demo.default-latitude·longitude를 비운 설정 (기본 역으로 돌아간다) */
+    private AppProperties withoutDefaultCoordinates() {
+        AppProperties.Demo demo = new AppProperties.Demo(properties.demo().defaultStation(), null, null, null,
+                properties.demo().password());
+        return new AppProperties(properties.storage(), properties.weather(), properties.tour(), properties.station(),
+                demo, properties.visit(), properties.auth());
     }
 
     @Test

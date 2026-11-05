@@ -99,11 +99,16 @@ public record AppProperties(
 
     /**
      * 시연용 설정.
-     * - defaultStation: 위치·역을 못 받았을 때 기준이 되는 역
+     * - 위치·역을 못 받았을 때 기준 위치 (발표장에서는 GPS가 잡히지 않는다):
+     *   defaultLatitude·defaultLongitude가 둘 다 있으면 그 좌표를 쓰고 이름은 defaultName (기본 명지대 인문캠퍼스, 거북골로 34).
+     *   좌표를 비우면(빈 값) defaultStation 역을 쓴다. defaultStation은 "역 선택" 목록의 기본 역(isDefault)이기도 하다
      * - password: 시연 계정의 비밀번호 (환경변수 APP_DEMO_PASSWORD). 비어 있으면 시연 계정을 만들지 않는다
      */
     public record Demo(
             @DefaultValue("독립문") String defaultStation,
+            @DefaultValue("37.5803") Double defaultLatitude,
+            @DefaultValue("126.9233") Double defaultLongitude,
+            @DefaultValue("명지대 인문캠퍼스") String defaultName,
             @DefaultValue("") String password
     ) {
     }

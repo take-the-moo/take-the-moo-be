@@ -69,7 +69,7 @@ public record NowResponseDto(
             @Schema(description = "날씨 출처: KMA(기상청) / SIMULATED(weather 파라미터) / DEFAULT(기본값)", example = "SIMULATED")
             WeatherSource weatherSource,
 
-            @Schema(description = "기준 역 이름. 좌표로 정했으면 가장 가까운 역", example = "독립문", nullable = true)
+            @Schema(description = "기준 역 이름. 좌표로 정했으면 가장 가까운 역, 위치·역이 없으면 기본 위치 이름(명지대 인문캠퍼스)", example = "독립문", nullable = true)
             String baseStation
     ) {
     }

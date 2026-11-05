@@ -38,7 +38,7 @@ public class PlaceController {
     private final PlaceImageService placeImageService;
 
     @Operation(summary = "주변 장소", description = """
-            현장 해설을 볼 수 있는 장소를 가까운 순으로 준다. 위치 = lat·lng → 없으면 stationId → 없으면 기본 역(독립문).
+            현장 해설을 볼 수 있는 장소를 가까운 순으로 준다. 위치 = lat·lng → 없으면 stationId → 없으면 기본 위치(명지대 인문캠퍼스).
             위치는 계산에만 쓰고 저장하지 않는다. 거리 제한은 없다.
             """)
     @GetMapping("/nearby")
