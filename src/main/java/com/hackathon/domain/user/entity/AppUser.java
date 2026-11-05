@@ -31,11 +31,11 @@ public class AppUser extends BaseTimeEntity {
     private String id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "varchar(20)")
+    @Column(nullable = false, length = 20)
     private Nationality nationality;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "varchar(20)")
+    @Column(nullable = false, length = 20)
     private Language language;
 
     @Column(nullable = false)

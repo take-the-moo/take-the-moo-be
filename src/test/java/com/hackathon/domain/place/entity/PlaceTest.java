@@ -3,6 +3,7 @@ package com.hackathon.domain.place.entity;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hackathon.domain.place.curation.PlaceCuration;
+import com.hackathon.global.common.TimeSlot;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +16,7 @@ class PlaceTest {
 
         assertThat(museum.getStatus()).isEqualTo(PlaceStatus.ACTIVE);
         assertThat(museum.getIndoor()).isTrue();
-        assertThat(museum.getRecommendedTimeSlots()).isEqualTo("MORNING,AFTERNOON");
+        assertThat(museum.getTimeSlots()).containsExactlyInAnyOrder(TimeSlot.MORNING, TimeSlot.AFTERNOON);
         assertThat(museum.isSensitiveHistory()).isFalse();
         assertThat(museum.getExplanation()).isNull();
 
@@ -23,17 +24,18 @@ class PlaceTest {
         park.applyRules(null, true, false);
 
         assertThat(park.getIndoor()).isFalse();
-        assertThat(park.getRecommendedTimeSlots()).isEqualTo("MORNING,AFTERNOON,EVENING");
+        assertThat(park.getTimeSlots())
+                .containsExactlyInAnyOrder(TimeSlot.MORNING, TimeSlot.AFTERNOON, TimeSlot.EVENING);
     }
 
     @Test
     void 보강_값이_있으면_기본값보다_우선() {
         Place prison = tourPlace("14");
         prison.applyRules(new PlaceCuration("100", "서대문형무소역사관",
-                List.of("MORNING"), null, true, "해설 원문"), true, false);
+                List.of(TimeSlot.MORNING), null, true, "해설 원문"), true, false);
 
         assertThat(prison.getStatus()).isEqualTo(PlaceStatus.ACTIVE);
-        assertThat(prison.getRecommendedTimeSlots()).isEqualTo("MORNING");
+        assertThat(prison.getTimeSlots()).containsExactly(TimeSlot.MORNING);
         assertThat(prison.getIndoor()).isTrue(); // indoor는 안 적어서 문화시설 기본값
         assertThat(prison.isSensitiveHistory()).isTrue();
         assertThat(prison.getExplanation()).isEqualTo("해설 원문");
