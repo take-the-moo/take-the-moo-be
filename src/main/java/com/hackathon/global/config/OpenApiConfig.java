@@ -4,6 +4,7 @@ import com.hackathon.domain.llm.exception.LlmErrorType;
 import com.hackathon.domain.photo.exception.PhotoErrorType;
 import com.hackathon.domain.place.exception.PlaceErrorType;
 import com.hackathon.domain.place.exception.StationErrorType;
+import com.hackathon.domain.recommend.exception.RecommendErrorType;
 import com.hackathon.domain.review.exception.ReviewErrorType;
 import com.hackathon.domain.scene.exception.SceneErrorType;
 import com.hackathon.domain.user.exception.UserErrorType;
@@ -44,6 +45,7 @@ public class OpenApiConfig {
                     ExternalApiErrorType.values(),
                     PlaceErrorType.values(),
                     StationErrorType.values(),
+                    RecommendErrorType.values(),
                     SceneErrorType.values(),
                     UserErrorType.values(),
                     ReviewErrorType.values(),
